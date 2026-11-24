@@ -1,5 +1,6 @@
 import type { HubShellProps } from '../layout/HubShell';
 import { ReaderCard } from '../component/ReaderCard';
+import './hub-phone.css';
 
 /** A phone gets a list, not a grid: one reader per row, full-width targets. */
 export function HubMobileShell({

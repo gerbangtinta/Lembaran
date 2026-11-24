@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { readSource, type DocumentSource } from '@lembaran/framework';
-import { EmptyState, useFullscreen } from '@lembaran/ui';
+import { EmptyState, useFullscreen, useIsMobile } from '@lembaran/ui';
 import { decodeText, openFromDisk } from './feature/open';
 import { parseCsv } from './feature/grid';
 import { CsvShell, type CsvShellProps } from './presentations/layout/CsvShell';
+import { CsvMobileShell } from './presentations/mobile/CsvMobileShell';
 import type { SelectedCell } from './presentations/layout/viewport/CsvGrid';
 
 interface Props {
@@ -19,6 +20,7 @@ export function CsvApp({ source = null }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const rootRef = useRef<HTMLDivElement>(null);
+  const mobile = useIsMobile();
   const fullscreen = useFullscreen(rootRef);
 
   useEffect(() => {
@@ -94,5 +96,5 @@ export function CsvApp({ source = null }: Props) {
     onOpen: () => void open(),
   };
 
-  return <CsvShell {...shellProps} />;
+  return mobile ? <CsvMobileShell {...shellProps} /> : <CsvShell {...shellProps} />;
 }

@@ -5,6 +5,7 @@ import { PageBox } from '../ui/PdfToolbar';
 import { SearchPanel } from '../ui/SearchPanel';
 import { PdfViewport } from '../layout/viewport/PdfViewport';
 import type { ShellProps } from '../layout/PdfShell';
+import './pdf-phone.css';
 
 const COLORS = ['amber', 'green', 'blue', 'rose'] as const;
 

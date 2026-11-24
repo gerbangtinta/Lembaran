@@ -17,7 +17,7 @@ export interface CsvShellProps {
   onOpen(): void;
 }
 
-/** One shell for desktop and phone: a grid needs no separate chrome to fit a narrow screen. */
+/** The desktop CSV reader: the grid between a toolbar and a status line. The phone has its own shell. */
 export function CsvShell(props: CsvShellProps) {
   return (
     <ReaderShell

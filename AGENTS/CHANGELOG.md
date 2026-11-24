@@ -24,6 +24,8 @@ thumbnails on top of each other instead of scrolling.
 The shared layout hooks now ask one question each — is this a phone (mobile), a wide screen (desktop),
 or is the reader in full screen — and every reader answers them the same way. A phone layout is its own
 file with its own styles, so a phone screen and a desktop screen can no longer grow inside one component.
+CSV gained the phone reader it was missing: the same grid, with the selected cell read out under it and
+Open, separator and full screen within thumb reach.
 
 Nothing is uploaded, no file is modified, and the file is remembered so it opens again from the recent
 list. Excel is listed in the hub marked "coming next".

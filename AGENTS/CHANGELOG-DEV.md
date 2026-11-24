@@ -18,11 +18,26 @@ that were made instead of code.
   The rule is written into `AGENTS.md` (rule 8), `.github/copilot-instructions.md` and
   `AGENTS/ARCHITECTURE.md`: a mobile view gets its own `.tsx` and its own CSS, never a branch or a phone
   `@media` block in a desktop file, and only `App.tsx` chooses between the shells.
+  CSV was the one reader with no phone shell — it now has `presentations/mobile/CsvMobileShell.tsx`
+  (+ `mobile/csv-phone.css`) rendering the same grid with a name/size header, a live selected-cell
+  read-out and three thumb-sized controls (Open, separator, full screen), while `CsvShell` stays
+  desktop-only. The same split reached the two phone styles that were still living in desktop
+  stylesheets: PDF's `.pdf-phone*` block left `pdf.css` for `presentations/mobile/pdf-phone.css`
+  (imported by `PdfMobileShell`), and the hub's list layout left `hub.css` for
+  `presentations/mobile/hub-phone.css`.
   Verified at 360×800 in the Word reader: `.lb-phone-header` computed `display: flex`,
   `.lb-phone-action` `min-height: 44px`, `.lb-phone-bar` with its safe-area padding, and no `.lb-toolbar`
-  in the DOM — so `phone.css` travels with the phone component. `npm run typecheck`, `npm test` and
-  `npm run build` pass.
+  in the DOM — so `phone.css` travels with the phone component. In CSV at 360×800: header `cities.csv`
+  `401 × 7`, tapping Jakarta read `B2: Jakarta`, no toolbar/status; at 1280×800 the toolbar and status
+  line return with the selection. PDF at 360×800 still computes `.pdf-phone-header`/`.pdf-phone-bar`
+  `display: flex`, 44 px `.pdf-phonebtn` and its 6 px safe-area padding from the moved file; the hub at
+  360 px still gets `.hub-list` `gap: 10px` and `16px` under its header. Built CSS (gzip) after the
+  split: PDF 4,018 B (+22), Word 2,533 B (+18), PowerPoint 2,372 B (+21), CSV 2,779 B (+70, the new
+  phone stylesheet), hub 1,850 B. `npm run typecheck`, `npm test` and `npm run build` pass.
   Files: `Lembaran.UI/src/shell/{Stage.tsx,index.ts,shell.css,desktop/ReaderShell.tsx,mobile/PhoneShell.tsx,mobile/phone.css}`,
+  `Lembaran.Csv/src/{App.tsx,presentations/layout/CsvShell.tsx,presentations/mobile/{CsvMobileShell.tsx,csv-phone.css}}`,
+  `Lembaran.Pdf/src/presentations/{pdf.css,mobile/{PdfMobileShell.tsx,pdf-phone.css}}`,
+  `Lembaran.App/src/presentations/{hub.css,mobile/{HubMobileShell.tsx,hub-phone.css}}`,
   `AGENTS.md`, `.github/copilot-instructions.md`, `AGENTS/{ARCHITECTURE,DEVNOTES}.md`.
 
 - **The layout hooks answer three questions, with names that say which one they answer** (API). `layout/`

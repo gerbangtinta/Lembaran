@@ -1,0 +1,15 @@
+/* Hub phone only: a list, not a grid. Imported by HubMobileShell. */
+
+.hub-shell-phone .hub-header p {
+  margin-bottom: 16px;
+}
+
+.hub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hub-list .hub-card {
+  padding: 14px;
+}
