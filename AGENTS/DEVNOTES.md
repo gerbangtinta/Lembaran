@@ -52,7 +52,7 @@ Starting a plain `vite` inside one project serves only that folder, and the hub'
 | Project | Package | Job |
 | --- | --- | --- |
 | `Lembaran` | `@lembaran/framework` | platform only: `adapter/` contract, `files/` pick + hash, `opfs/` source store, `handles/` Dexie store, `licenses/` notice data. **No React, no CSS, no component.** |
-| `Lembaran.UI` | `@lembaran/ui` | reusable GUI: theme tokens (pastel green default, light, dark), `ThemeProvider`, `ThemeToggle`, `useIsDesktop` / `useIsMobile` / `useIsFullscreen`, the reader frame every format composes, and `src/components/` — the rail (`SidePanel`, `PanelItem`, `RailThumb`), `Surface`, `Toolbar`, `StatusBar`, `PropertiesPanel` | draw a document, or know a format |
+| `Lembaran.UI` | `@lembaran/ui` | reusable GUI: theme tokens (pastel green default, light, dark), `ThemeProvider`, `ThemeToggle`, `useIsDesktop` / `useIsMobile` / `useIsFullscreen`, the reader frames — `shell/desktop/ReaderShell` and `shell/mobile/PhoneShell` (with `mobile/phone.css`) — and `src/components/` — the rail (`SidePanel`, `PanelItem`, `RailThumb`), `Surface`, `Toolbar`, `StatusBar`, `PropertiesPanel` | draw a document, or know a format |
 | `Lembaran.App` | `@lembaran/app` | the hub: `feature/{choose,embed,recents}`, `presentations/{layout,component,mobile}` |
 | `Lembaran.Pdf` | `@lembaran/pdf` | the reader: `feature/{open,paginate,zoom,search,annotate,fullscreen,shortcuts}`, `storage/annotations.ts`, `presentations/{layout/viewport,ui,component,mobile}` |
 | `Lembaran.Csv` | `@lembaran/csv` | the reader: `feature/{open,grid}`, `presentations/{layout/viewport,ui,mobile}` |
@@ -182,3 +182,7 @@ live beside it, so a read-only reader can still take notes.
   function on every render, so the card repaints forever (and a pdf.js render restarts mid-paint). The
   canvas is measured before painting; a painter that hard-codes `RAIL_THUMB_WIDTH` instead of using the
   width it is handed draws a thumbnail wider than its card.
+- **A phone layout never shares a file with a desktop layout.** `PhoneShell` lives in
+  `Lembaran.UI/src/shell/mobile/`, imports its own `phone.css`, and shares only the neutral
+  `Stage`/`Root`/`Body` classes with `shell/desktop/ReaderShell`. Copy markup instead of adding a
+  `mobile` prop or a phone `@media` block to a desktop component; `App.tsx` is the only chooser.

@@ -35,7 +35,9 @@ no component** — the reusable GUI layer is `Lembaran.UI` (theme tokens, `Theme
 control, slide strip, sheet tab bar or grid belongs in the reader's own `presentations/`.
 
 Two rules keep it honest: another feature imports `feature/<name>/index.ts`, never its internals; and a
-phone gets its own shell, never a responsive branch inside a desktop layout.
+phone gets its own shell in its own files — a separate `.tsx`, a separate stylesheet, never a
+responsive branch or a phone `@media` block inside a desktop file. Only `App.tsx` picks, by rendering
+one shell or the other.
 
 The formats are allowed to look and behave nothing alike. That is the point of them being separate
 projects. Do not unify them for tidiness. Full rules:

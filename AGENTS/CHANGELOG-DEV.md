@@ -9,6 +9,22 @@ that were made instead of code.
 
 ## 2026-11-24
 
+- **A phone layout now has its own files, starting with the frame** (architecture). `ReaderShell.tsx` held
+  the desktop frame and `PhoneShell` in one module, and `shell.css` carried every `.lb-phone-*` rule
+  beside the desktop frame. The two platforms are separate files now:
+  `shell/desktop/ReaderShell.tsx`, `shell/mobile/PhoneShell.tsx` (+ `shell/mobile/phone.css`, imported by
+  the component itself), with `shell/Stage.tsx` holding the only shared pieces and `shell/shell.css`
+  reduced to the desktop frame plus the neutral root/stage/body classes (122 lines, phone block gone).
+  The rule is written into `AGENTS.md` (rule 8), `.github/copilot-instructions.md` and
+  `AGENTS/ARCHITECTURE.md`: a mobile view gets its own `.tsx` and its own CSS, never a branch or a phone
+  `@media` block in a desktop file, and only `App.tsx` chooses between the shells.
+  Verified at 360×800 in the Word reader: `.lb-phone-header` computed `display: flex`,
+  `.lb-phone-action` `min-height: 44px`, `.lb-phone-bar` with its safe-area padding, and no `.lb-toolbar`
+  in the DOM — so `phone.css` travels with the phone component. `npm run typecheck`, `npm test` and
+  `npm run build` pass.
+  Files: `Lembaran.UI/src/shell/{Stage.tsx,index.ts,shell.css,desktop/ReaderShell.tsx,mobile/PhoneShell.tsx,mobile/phone.css}`,
+  `AGENTS.md`, `.github/copilot-instructions.md`, `AGENTS/{ARCHITECTURE,DEVNOTES}.md`.
+
 - **The layout hooks answer three questions, with names that say which one they answer** (API). `layout/`
   held `useIsPhone.ts` and `useFullscreen.ts`, so a reader asked "phone?" and got back a state object when
   it asked for fullscreen. It now holds `desktop.ts` (`useIsDesktop`), `mobile.ts` (`useIsMobile`, the same

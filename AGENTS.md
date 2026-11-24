@@ -58,10 +58,17 @@ estimated. A change that grows a first load must say by how much.
 `LICENSES/`, and anything requiring disclosure has it placed where it is actually served. No
 binary-only dependency, ever.
 
+**8. A phone is its own files.** A mobile view gets its own `.tsx`/`.ts` **and** its own stylesheet —
+never a mobile variant, a mobile branch or a phone `@media` block inside a desktop file. `App.tsx` is
+the only file that chooses between the two, and it chooses by rendering two different shells. Writing
+the markup twice is the cost of two platforms not being one component.
+
 ## Do not
 
 - Do not add a native shell (Tauri, Electron, Capacitor). This is HTML only.
 - Do not add a dependency with an unrecorded license, or an AGPL/GPL one without an ADR.
 - Do not import a format adapter from the hub's production bundle.
 - Do not put a format's chrome into `Lembaran`.
+- Do not put a mobile layout and a desktop layout in one component file, or a phone rule in a desktop
+  stylesheet.
 - Do not rewrite an older day in `CHANGELOG-DEV.md`; append, and reverse with a `Reverted:` line.

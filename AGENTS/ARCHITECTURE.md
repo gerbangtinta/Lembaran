@@ -15,7 +15,7 @@ document looks like on screen is the format's, including its toolbar.
 | Path | Package | Owns | Must not |
 | --- | --- | --- | --- |
 | `Lembaran` | `@lembaran/framework` | `adapter/` contract, `files/` pick + hash, `opfs/` source store, `handles/` handle persistence, `licenses/` notice data | draw anything, import React, ship CSS, parse a document, know a format's name |
-| `Lembaran.UI` | `@lembaran/ui` | reusable GUI: theme tokens, `ThemeProvider`, `useIsDesktop` / `useIsMobile` / `useIsFullscreen`; the general components in `src/components/` — `rail/` (`SidePanel`, `PanelItem`, `RailThumb`), `surface/` (`Surface`), `header/` (`Toolbar` + controls), `footer/` (`StatusBar` + items), `properties/` (`PropertiesPanel`) — and **the reader frame** (`ReaderShell`, `PhoneShell`, `EmptyState`, `Stage`) that composes them | know what a document is, or draw one |
+| `Lembaran.UI` | `@lembaran/ui` | reusable GUI: theme tokens, `ThemeProvider`, `useIsDesktop` / `useIsMobile` / `useIsFullscreen`; the general components in `src/components/` — `rail/` (`SidePanel`, `PanelItem`, `RailThumb`), `surface/` (`Surface`), `header/` (`Toolbar` + controls), `footer/` (`StatusBar` + items), `properties/` (`PropertiesPanel`) — and **the reader frames**: `shell/desktop/ReaderShell` and `shell/mobile/PhoneShell` (+ `mobile/phone.css`), sharing only `shell/Stage` | know what a document is, or draw one |
 | `Lembaran.Pdf` | `@lembaran/pdf` | pdf.js adapter, page canvas + text layer, search, zoom | import another reader, touch IndexedDB directly |
 | `Lembaran.Docs` | `@lembaran/docs` | docx-preview layout, page navigation, find with highlights | " |
 | `Lembaran.Pptx` | `@lembaran/pptx` | BetterOffice PPTX adapter, slide canvas, thumbnail rail | " |
@@ -41,7 +41,9 @@ format's name or what its content means.
 A capability is one folder under `feature/` with its own store, actions and selectors. A pixel is in
 `presentations/`, split into `layout/` (shells and the drawing surface), `component/` (composed pieces),
 `library/` (primitives with no product knowledge), `ui/` (toolbars, dialogs) and `mobile/` (the phone's
-own shell). Full rules: [skills/lembaran/references/slices.md](skills/lembaran/references/slices.md).
+own shell). `mobile/` is not a narrower `layout/`: it is its own `.tsx` with its own rules, and `App.tsx`
+is the only file that picks between the two. Full rules:
+[skills/lembaran/references/slices.md](skills/lembaran/references/slices.md).
 
 ```
 Lembaran.Pdf/
