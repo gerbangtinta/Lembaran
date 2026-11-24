@@ -16,6 +16,8 @@ export interface Annotation {
   color: AnnotationColor;
   note: string;
   createdAt: number;
+  /** true once the rectangle was written into the file itself: only the note is still ours to keep */
+  baked?: boolean;
 }
 
 class AnnotationDb extends Dexie {
@@ -46,6 +48,17 @@ export async function updateAnnotation(
 
 export async function removeAnnotation(id: string): Promise<void> {
   await db.items.delete(id);
+}
+
+/** Moves a document's notes to a new key, so a saved file keeps what the reader wrote about it. */
+export async function rekeyAnnotations(from: string, to: string): Promise<void> {
+  if (!from || !to || from === to) return;
+  const rows = await db.items.where('docKey').equals(from).toArray();
+  if (rows.length === 0) return;
+  await db.transaction('rw', db.items, async () => {
+    await db.items.bulkPut(rows.map((row) => ({ ...row, docKey: to, baked: true })));
+    await db.items.bulkDelete(rows.map((row) => row.id));
+  });
 }
 
 export async function clearAnnotations(docKey: string): Promise<void> {

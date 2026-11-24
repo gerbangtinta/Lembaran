@@ -44,6 +44,14 @@ export async function listRecent(limit = 12): Promise<RecentEntry[]> {
   return db.recent.orderBy('openedAt').reverse().limit(limit).toArray();
 }
 
+/**
+ * The record behind a reader's OPFS path. A reader opened by path asks this to find the disk handle the bytes
+ * came from, which is the only way back to the file the user actually owns.
+ */
+export async function recentByPath(path: string): Promise<RecentEntry | null> {
+  return (await db.recent.filter((entry) => entry.path === path).first()) ?? null;
+}
+
 export async function forget(id: string): Promise<void> {
   await db.recent.delete(id);
 }

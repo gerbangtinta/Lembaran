@@ -33,7 +33,7 @@ export function CsvShell(props: CsvShellProps) {
       footer={<CsvStatus table={props.table} selected={props.selected} name={props.name} />}
     >
       <Stage>
-        <CsvGrid table={props.table} selected={props.selected} onSelect={props.onSelect} />
+        <CsvGrid table={props.table} selected={props.selected} onSelect={props.onSelect} docKey={props.name} />
       </Stage>
     </ReaderShell>
   );

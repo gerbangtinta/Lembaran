@@ -63,106 +63,107 @@ export function HubShell({
         </label>
 
         <div className="hub-bar-actions">
-          {appScale.scale !== 1 && (
-            <button
-              type="button"
-              className="hub-scale"
-              onClick={() => appScale.reset()}
-              title={`App scale ${Math.round(appScale.scale * 100)}% — Ctrl + scroll to change, click to reset`}
-              aria-label={`App scale ${Math.round(appScale.scale * 100)} percent. Click to reset to 100 percent`}
-            >
-              {Math.round(appScale.scale * 100)}%
-            </button>
-          )}
+          {/* the scale is desk chrome: a phone has no Ctrl + scroll, and its bar carries none */}
+          <button
+            type="button"
+            className="hub-scale"
+            onClick={() => appScale.reset()}
+            title={`App scale ${Math.round(appScale.scale * 100)}% — Ctrl + scroll to change, click to reset`}
+            aria-label={`App scale ${Math.round(appScale.scale * 100)} percent. Click to reset to 100 percent`}
+          >
+            {Math.round(appScale.scale * 100)}%
+          </button>
           <ThemeToggle />
         </div>
       </header>
 
       <main className="hub-main">
-        <div className="hub-intro">
-          <h1>Read anything. Keep it local.</h1>
-          <p>
-            PDF, Word, PowerPoint, Excel and CSV, opened in this browser. The file is copied into a
-            private store on this device and never uploaded.
-          </p>
-        </div>
-
-        {error !== null && (
-          <div className="hub-error" role="alert">
-            <span>{error}</span>
-            <button type="button" className="lb-ghost" onClick={onDismissError} aria-label="Dismiss">
-              ✕
-            </button>
+        <div className="hub-main-inner">
+          <div className="hub-intro">
+            <h1>Read anything. Keep it local.</h1>
+            <p>
+              PDF, Word, PowerPoint, Excel and CSV, opened in this browser. The file is copied into a
+              private store on this device and never uploaded.
+            </p>
           </div>
-        )}
 
-        <section className="hub-section" aria-label="Bound folder">
-          <header className="hub-section-head">
-            <h2 className="lb-label">Folder</h2>
-            {folder.error !== null && <span className="hub-flag">{folder.error}</span>}
-          </header>
-          <FolderLibrary folder={folder} query={query} onOpen={onOpenFolderFile} />
-        </section>
-
-        <section className="hub-section" aria-label="Readers">
-          <header className="hub-section-head">
-            <h2 className="lb-label">Readers</h2>
-            <span className="hub-count">{readers.length}</span>
-          </header>
-          {readers.length === 0 ? (
-            <p className="hub-note">No reader matches “{query}”.</p>
-          ) : (
-            <div className="hub-grid">
-              {readers.map((entry) => (
-                <ReaderCard
-                  key={entry.id}
-                  entry={entry}
-                  busy={busyId === entry.id}
-                  onLaunch={onLaunch}
-                />
-              ))}
+          {error !== null && (
+            <div className="hub-error" role="alert">
+              <span>{error}</span>
+              <button type="button" className="lb-ghost" onClick={onDismissError} aria-label="Dismiss">
+                ✕
+              </button>
             </div>
           )}
-        </section>
 
-        <section className="hub-section" aria-label="Recently opened">
-          <header className="hub-section-head">
-            <h2 className="lb-label">Recent</h2>
-            <span className="hub-count">{recents.length}</span>
-          </header>
-          {recents.length === 0 ? (
-            <p className="hub-note">Nothing opened yet. Drop a file anywhere on this window.</p>
-          ) : (
-            <ul className="hub-recents">
-              {recents.map((recent) => (
-                <li key={recent.id} className="hub-recent-row">
-                  <button type="button" className="hub-recent" onClick={() => onOpenRecent(recent)}>
-                    <span className="hub-recent-name">{recent.name}</span>
-                    <span className="hub-recent-when">
-                      {new Date(recent.openedAt).toLocaleDateString(undefined, {
-                        month: 'short',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className="hub-recent-x"
-                    onClick={() => onRemoveRecent(recent.id)}
-                    aria-label={`Remove ${recent.name} from recent`}
-                    title="Remove from recent"
-                  >
-                    ×
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+          <section className="hub-section" aria-label="Bound folder">
+            <header className="hub-section-head">
+              <h2 className="lb-label">Folder</h2>
+              {folder.error !== null && <span className="hub-flag">{folder.error}</span>}
+            </header>
+            <FolderLibrary folder={folder} query={query} onOpen={onOpenFolderFile} />
+          </section>
+
+          <section className="hub-section" aria-label="Readers">
+            <header className="hub-section-head">
+              <h2 className="lb-label">Readers</h2>
+              <span className="hub-count">{readers.length}</span>
+            </header>
+            {readers.length === 0 ? (
+              <p className="hub-note">No reader matches “{query}”.</p>
+            ) : (
+              <div className="hub-grid">
+                {readers.map((entry) => (
+                  <ReaderCard
+                    key={entry.id}
+                    entry={entry}
+                    busy={busyId === entry.id}
+                    onLaunch={onLaunch}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="hub-section" aria-label="Recently opened">
+            <header className="hub-section-head">
+              <h2 className="lb-label">Recent</h2>
+              <span className="hub-count">{recents.length}</span>
+            </header>
+            {recents.length === 0 ? (
+              <p className="hub-note">Nothing opened yet. Drop a file anywhere on this window.</p>
+            ) : (
+              <ul className="hub-recents">
+                {recents.map((recent) => (
+                  <li key={recent.id} className="hub-recent-row">
+                    <button type="button" className="hub-recent" onClick={() => onOpenRecent(recent)}>
+                      <span className="hub-recent-name">{recent.name}</span>
+                      <span className="hub-recent-when">
+                        {new Date(recent.openedAt).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="hub-recent-x"
+                      onClick={() => onRemoveRecent(recent.id)}
+                      aria-label={`Remove ${recent.name} from recent`}
+                      title="Remove from recent"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
       </main>
 
       <footer className="hub-foot">
-        <span>Nothing is uploaded, and no file is modified.</span>
+        <span>Nothing is uploaded. A reader writes only the file you ask it to save.</span>
         <span className="lb-chip">GPL-3.0-only</span>
       </footer>
     </div>

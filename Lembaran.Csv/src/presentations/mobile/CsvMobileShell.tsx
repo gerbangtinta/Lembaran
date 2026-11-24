@@ -1,4 +1,4 @@
-import { PhoneShell, Stage } from '@lembaran/ui';
+import { Icon, PhoneShell, Stage } from '@lembaran/ui';
 import { DELIMITERS, columnName } from '../../feature/grid';
 import type { CsvShellProps } from '../layout/CsvShell';
 import { CsvGrid } from '../layout/viewport/CsvGrid';
@@ -14,7 +14,7 @@ function cellLabel(props: CsvShellProps): string {
 }
 
 /**
- * The phone's CSV reader: the grid, a read-out of the selected cell, and three thumb-sized controls.
+ * The phone's CSV reader: the grid, a read-out of the selected cell, and three icons on the header line.
  * Desktop chrome (toolbar, status line, theme toggle) is not rendered here; it lives in `../layout/`.
  */
 export function CsvMobileShell(props: CsvShellProps) {
@@ -25,18 +25,22 @@ export function CsvMobileShell(props: CsvShellProps) {
     <PhoneShell
       rootRef={props.rootRef}
       title={props.name}
-      meta={`${rows} × ${columns}`}
-      bar={
-        <div className="csv-phone-bar">
-          <span className="csv-phone-cell" aria-live="polite" title={props.selected?.value}>
-            {cellLabel(props)}
-          </span>
-          <div className="csv-phone-row">
-            <button type="button" className="lb-phone-action" onClick={props.onOpen} aria-label="Open a CSV file">
-              Open
-            </button>
+      actions={
+        <>
+          <button
+            type="button"
+            className="lb-phone-icon"
+            onClick={props.onOpen}
+            aria-label="Open a CSV file"
+            title="Open a CSV file"
+          >
+            <Icon name="open" />
+          </button>
+          {/* the icon is the target; the native list behind it keeps the words */}
+          <label className="lb-phone-icon csv-phone-sep" title="Separator">
+            <Icon name="columns" />
             <select
-              className="csv-phone-select"
+              className="csv-phone-sep-input"
               aria-label="Separator"
               value={props.delimiter}
               onChange={(event) => props.onDelimiter(event.target.value)}
@@ -47,23 +51,36 @@ export function CsvMobileShell(props: CsvShellProps) {
                 </option>
               ))}
             </select>
-            {props.fullscreen.supported && (
-              <button
-                type="button"
-                className="lb-phone-action"
-                onClick={props.fullscreen.toggle}
-                aria-pressed={props.fullscreen.active}
-                aria-label={props.fullscreen.active ? 'Exit full screen' : 'Full screen'}
-              >
-                {props.fullscreen.active ? 'Exit' : 'Full'}
-              </button>
-            )}
-          </div>
-        </div>
+          </label>
+        </>
+      }
+      end={
+        props.fullscreen.supported && (
+          <button
+            type="button"
+            className="lb-phone-icon"
+            onClick={props.fullscreen.toggle}
+            aria-pressed={props.fullscreen.active}
+            aria-label={props.fullscreen.active ? 'Exit full screen' : 'Full screen'}
+            title={props.fullscreen.active ? 'Exit full screen' : 'Full screen'}
+          >
+            <Icon name={props.fullscreen.active ? 'exitFullscreen' : 'fullscreen'} />
+          </button>
+        )
+      }
+      bar={
+        <>
+          <span className="csv-phone-cell" aria-live="polite" title={props.selected?.value}>
+            {cellLabel(props)}
+          </span>
+          <span className="csv-phone-size">
+            {rows} × {columns}
+          </span>
+        </>
       }
     >
       <Stage>
-        <CsvGrid table={props.table} selected={props.selected} onSelect={props.onSelect} />
+        <CsvGrid table={props.table} selected={props.selected} onSelect={props.onSelect} docKey={props.name} />
       </Stage>
     </PhoneShell>
   );

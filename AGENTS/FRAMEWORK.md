@@ -9,6 +9,7 @@ Every framework and engine Lembaran depends on, with the license that binds it a
 | Worker RPC | `comlink` | 4.4.2 | Apache-2.0 | 5 KB → 2 KB | Typed main↔worker messaging; keeps every engine off the UI thread |
 | Handle store | `dexie` | 4.4.7 | Apache-2.0 | 94 KB → 30 KB | Persists `FileSystemFileHandle` across reloads (the Lakaran pattern) |
 | PDF engine | `pdfjs-dist` | 6.5.438 | Apache-2.0 | 1.71 MB → 0.50 MB | Reference renderer; text layer + search for free |
+| PDF writer | `pdf-lib` | 1.17.1 | MIT | 440 kB raw -> 181 kB gzip (measured as the reader's growth: 804.6 kB / 245.8 kB gzip before, 1244.6 kB / 426.9 kB after) | Writes pages, text, ink and images back into a real PDF: page order, rotation, blanks, and the overlay the user placed. pdf.js can only read, so a writer is the one way to save |
 | CSV parser | `papaparse` | 5.7.1 | MIT | 19 KB → 7 KB | Streaming, quote-safe, delimiter sniffing |
 | DOCX engine | `@betteroffice/docx` | 0.5.1 | Apache-2.0 | 10.65 MB → 4.03 MB | **Held, not installed.** Its renderer lives in the editing module, so the read-only reader would carry an editor's weight; measured for the record, no project imports it |
 | DOCX reader | `docx-preview` | 0.4.1 | Apache-2.0 | 73.5 KB → 40 KB | Lays real OOXML out as pages in HTML: page breaks, headers, footnotes, tables. Measured reader bundle: 496 KB raw → **148.8 KB gzip** including React |

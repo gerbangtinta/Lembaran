@@ -16,8 +16,11 @@ export function pageAtOffset(offsets: readonly number[], scrollTop: number, slac
   return page;
 }
 
-/** Scroll offset that puts a page near the top of the container. */
-export function offsetForPage(offsets: readonly number[], page: number, margin = 12): number {
+/**
+ * Scroll offset that puts a page near the top of the container. The margin stays inside `pageAtOffset`'s slack,
+ * so the reader still names the page it was just sent to instead of the one before it.
+ */
+export function offsetForPage(offsets: readonly number[], page: number, margin = 8): number {
   const index = Math.max(0, Math.min(offsets.length - 1, page - 1));
   return Math.max(0, (offsets[index] ?? 0) - margin);
 }

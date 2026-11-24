@@ -89,6 +89,19 @@ export async function readHandleBytes(handle: FileSystemFileHandle): Promise<Uin
   return new Uint8Array(await file.arrayBuffer());
 }
 
+/**
+ * Asks for write permission on a file the user already opened. Saving over their own file is a second
+ * grant on some browsers, so it is requested from the click that asked for it, never on load.
+ */
+export async function ensureWritePermission(handle: FileSystemFileHandle): Promise<boolean> {
+  const descriptor = { mode: 'readwrite' as const };
+  const query = handle.queryPermission;
+  const request = handle.requestPermission;
+  if (!query || !request) return true;
+  if ((await query.call(handle, descriptor)) === 'granted') return true;
+  return (await request.call(handle, descriptor)) === 'granted';
+}
+
 /** Asks for read permission again. Must be called from a user gesture. */
 export async function ensureReadPermission(handle: FileSystemFileHandle): Promise<boolean> {
   const descriptor = { mode: 'read' as const };

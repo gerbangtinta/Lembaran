@@ -1,4 +1,4 @@
-import { ThemeToggle, Toolbar, ToolbarSpacer, ToolButton, type FullscreenState } from '@lembaran/ui';
+import { Icon, ThemeToggle, Toolbar, ToolbarSpacer, ToolButton, type FullscreenState } from '@lembaran/ui';
 import { DELIMITERS } from '../../feature/grid';
 
 export interface CsvToolbarProps {
@@ -11,8 +11,8 @@ export interface CsvToolbarProps {
 export function CsvToolbar({ delimiter, onDelimiter, onOpen, fullscreen }: CsvToolbarProps) {
   return (
     <Toolbar label="CSV controls">
-      <ToolButton outline label="Open a CSV file" onClick={onOpen}>
-        Open
+      <ToolButton outline label="Open another file" title="Open another CSV file" onClick={onOpen}>
+        <Icon name="open" />
       </ToolButton>
 
       <label className="csv-field">
@@ -32,11 +32,10 @@ export function CsvToolbar({ delimiter, onDelimiter, onOpen, fullscreen }: CsvTo
         <ToolButton
           outline
           label={fullscreen.active ? 'Exit full screen' : 'Full screen'}
-          title="Full screen"
           pressed={fullscreen.active}
           onClick={fullscreen.toggle}
         >
-          {fullscreen.active ? 'Exit full screen' : 'Full screen'}
+          <Icon name={fullscreen.active ? 'exitFullscreen' : 'fullscreen'} />
         </ToolButton>
       )}
     </Toolbar>

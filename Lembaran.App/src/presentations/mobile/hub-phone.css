@@ -65,13 +65,14 @@
   outline: none;
 }
 
+/* no right padding on the shell: the section owns it, so a scrollbar sits at the window's end */
 .hub-shell-phone .hub-main {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
   gap: 0;
-  padding: 14px 14px 8px;
+  padding: 14px 0 0 14px;
   overflow: hidden;
 }
 
@@ -80,14 +81,20 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-bottom: 8px;
+  /* the gap between a card and its scrollbar, and room under the last card */
+  padding: 0 14px 14px 0;
+  scrollbar-gutter: stable;
 }
 
-/* the folder pane never scrolls: its list does, and only its list */
-.hub-shell-phone .hub-pane {
+/* the folder pane never scrolls: its list does, and only its list. The pane therefore gives up the
+   right padding the other sections take, so the list's own scrollbar can sit at the window's end */
+.hub-shell-phone .hub-main > section.hub-pane {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  /* the head keeps the inset; only the list reaches past it, so its bar sits at the window's end */
+  padding-bottom: 0;
+  scrollbar-gutter: auto;
 }
 
 .hub-folder-pane {
@@ -228,12 +235,16 @@
   max-height: none;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-right: 2px;
+  /* out to the window's edge, then the 14 px gap comes back as padding inside the scroller */
+  margin-right: -14px;
+  padding: 0 14px 14px 0;
+  scrollbar-gutter: stable;
 }
 
+/* a row button carries its own padding: the tap target and the card's edge are the same box */
 .hub-browse-phone .hub-row {
   min-height: 52px;
-  padding: 0 12px;
+  padding: 10px 14px;
 }
 
 .hub-shell-phone .hub-row-chevron {
@@ -246,7 +257,7 @@
   width: 100%;
   align-items: flex-start;
   gap: 3px;
-  padding: 12px;
+  padding: 12px 14px;
   text-align: left;
   font-size: 13.5px;
 }

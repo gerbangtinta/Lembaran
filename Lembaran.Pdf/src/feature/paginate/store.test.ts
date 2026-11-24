@@ -17,8 +17,14 @@ describe('paginate', () => {
   });
 
   it('scrolls to a page with a margin, clamped at the start', () => {
-    expect(offsetForPage(offsets, 2)).toBe(788);
+    expect(offsetForPage(offsets, 2)).toBe(792);
     expect(offsetForPage(offsets, 1)).toBe(0);
-    expect(offsetForPage(offsets, 99)).toBe(2388);
+    expect(offsetForPage(offsets, 99)).toBe(2392);
+  });
+
+  it('still names the page it was just sent to', () => {
+    for (let page = 1; page <= offsets.length; page += 1) {
+      expect(pageAtOffset(offsets, offsetForPage(offsets, page))).toBe(page);
+    }
   });
 });

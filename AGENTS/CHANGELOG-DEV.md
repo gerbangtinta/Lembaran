@@ -7,6 +7,253 @@ is in [CHANGELOG.md](CHANGELOG.md). Never rewrite an older day — append, and r
 Current version: `0.1.0-alpha`, named 2026-11-24. Nothing is built yet; this file starts with the decisions
 that were made instead of code.
 
+## 2026-11-25
+
+- **Save and Compress are two features, not one dialog with checkboxes** (split). **Save** asks every time and then
+  writes: no options in the way. `Ctrl+S` opens the same question. `savePdf` became `bakePdf` (record → the file's
+  own bytes) and `writePdf` (bytes → the file, or a copy when it cannot be written), with `canOverwrite(path)` so
+  the confirm can say "Save over it" or "Save a copy" *before* the button is pressed instead of finding out after.
+  Nothing is re-compressed on that path: the bytes are the edits, baked. **Compress** has its own window and its own
+  button, and three ways in: Low/Medium/High presets (`COMPRESS_PRESETS`), **fit a final size** (a KB target walked
+  down `TARGET_LADDER` from the best-looking pass to the smallest by `fitToSize`, which stops at the first pass that
+  fits), or every dial by hand — with the two weights kept apart, photos (`compressImages(bytes, quality, maxEdge)`)
+  and the structure that carries text and vectors (`rewriteStructure`). "Check the size" reports before → after, the
+  share saved, and how many photos were rewritten; a target that cannot be met says what it reached and why (the
+  document's own text and lines are never rasterised, so that is the floor). The save writes over the original by
+  default and a copy on request. Verified in Chromium with a 212 KB sample holding one 215 KB photo: Medium 212 →
+  111 KB (−48%, 1 photo rewritten), a 40 KB target reached 33 KB at 35% / 800 px, an impossible 2 KB target answered
+  "the smallest it would go is 33 KB", **Save** wrote 212 KB through the picker and reported it on the status line,
+  **Save compressed** wrote 113,439 bytes which reopened as a valid 2-page PDF with both text runs still text.
+  `fitToSize` is tested with a fake compressor (3 tests: the first fit wins, a miss says so, and the ladder only
+  ever gets stronger) — **45 PDF tests**.
+- **The thumbnail menu is a popup over the page, not a row in the rail** (fix). It was rendered as a child of
+  `SidePanel` with `position: sticky`, so opening it took a slot in the rail's flex column and pushed every card
+  below it down. It is now portalled to `document.body` and `position: fixed` at the pointer, clamped inside the
+  window by a `useLayoutEffect` that measures it after mount, and it closes on scroll and resize because a fixed
+  menu would otherwise stay behind while the card it belongs to scrolls away. The 44 px it had per row was the
+  global `button { min-height: var(--lb-tap) }` — a finger size — so the rows are 28 px now and the whole menu is
+  172 × 153 instead of 172 × 217. Verified in Chromium at 1200 × 760: card tops 59/151 before and after opening,
+  rail `scrollHeight === clientHeight` (nothing added to the column), menu `position: fixed`, parent `BODY`, inside
+  the viewport, Rotate right turned the slot 420 × 595 → 595 × 420 and closed it, Escape closed it, an outside click
+  closed it with `getSelection()` empty, and a rail scroll closed it.
+- **Stamp rows are dragged into order, the mark can look pressed, and the preview has its own window** (feature
+  round). **Rows, not lines:** each row begins with a grip (`⠿`) at the left, and the row is dragged onto the row
+  it should take the place of (`moveStampLineTo`, which reuses the tested delta move); the grip also answers
+  ArrowUp/ArrowDown when focused, so the order is reachable without a mouse. The ↑/↓ buttons are gone and every
+  label says *row*. **A stamp can look pressed:** `StampDesign.finish` is `perfect`, `natural` or `worn` (plus the
+  `seed` the hand-made marks come from). `paintStamp(canvas, design, scale, seed)` now draws the frame and the rows
+  through one `drawPass` — at wobble 0 it is the exact print it always was — and for the other finishes adds a
+  whole-mark rotation of up to ±1.5°, a corner jitter on the frame, a per-row offset, and a second, fainter
+  impression, the way a rubber stamp lays ink twice; `season()` then grains the canvas's own pixels with smooth
+  value noise (`feature/stamp/noise.ts`: mulberry32 `seededRandom` and a bilinear-smoothstep `valueNoise`) and, for
+  `worn`, speckle where the rubber is dry. The preview draws from `design.seed`, so it does not shimmer while you
+  type; `renderStamp(design, fresh = true)` mixes a fresh seed per placement, because no two presses match —
+  measured in Chromium: two *natural* placements stored different PNG hashes, two *perfect* ones stored the same,
+  and the same design's preview was byte-identical across a finish round-trip. **A window of its own:** the preview
+  is `.pdf-stamp-preview` at a fixed 320 px around a fixed 220 px `.pdf-stamp-stage`, and the canvas is fitted from
+  both sides, so a long row shrinks the mark (294 × 23 measured) instead of widening the dialog; eleven rows scroll
+  the panel (which already had `max-height: 88vh`) instead of stretching it. **The pen could not be put down:**
+  `D` was printed on its button but no shortcut handled it, there was no confirm, and Escape — the one key everyone
+  reaches for — never arrived: Chrome marks Escape's keydown as already used while a pointer gesture is in flight,
+  and `useShortcuts` returned on `defaultPrevented` before it looked at the key. Escape is handled before that guard
+  now, `Enter` and a `Done` chip in the bar finish the armed tool, and `closeOverlays` clears the highlight tool
+  (`annotations.setTool('none')`) — the dead `editTool === 'highlight'` sync effect is deleted, because it fought
+  the annotate button whenever `annotations.setTool` changed identity, which is why `H` sometimes did nothing.
+  Verified in Chromium at 1200 × 760: grip at x = 239 with the field at 261, dragging row 3 onto row 1 reordered it,
+  ArrowUp on the last grip moved it, `H` → Escape, `D` → Done, and `D` → Enter all put the tool down, and the
+  status line names the armed tool. `42 PDF tests` (7 new).
+- **The page switch moved under the thumbnails** (layout). `‹ 1 of 2 ›` sat on the top bar, away from the pages it
+  moves through. It is now the rail's footer: `SidePanel` takes an optional `footer`, `.lb-panel-foot` sticks to
+  the bottom of the rail (and is pushed there even when the cards are few), and `ThumbnailRail` passes a compact
+  `PageSwitch` — new `presentations/ui/PageSwitch.tsx`, which also owns `PageBox` now that the mobile header and
+  the bar both use it. The bar keeps the switch **only while the rail is hidden**, so closing the rail cannot take
+  navigation away. Traps: the footer is sticky rather than positioned, because the rail is its own scroll
+  container — with `margin-top: auto` it is at the bottom whether the cards fill the rail or not, and
+  `margin-right/-bottom: -8px` cancels the rail's padding so its rule reaches the edges; the compact seg is a size
+  down (28 px buttons, 4ch box) because 168 px of rail minus the scrollbar gutter leaves 141 px. Verified in
+  Chromium at 1200 × 760: no `Navigation` group in `.pdf-topbar` while the rail is open; the footer measured
+  157 × 45 at the rail's bottom and stayed at y = 693 with the rail scrolled 276 px; Next took page 2 and typing 1
+  returned to page 1 with the card's `aria-current` following; with the rail hidden the switch came back to the
+  bar at x = 228 in the same 51 px row, moved to page 2, and returned to the footer when the rail reopened.
+- **Find marks its hits, a note takes Delete, and a blank page can be deleted** (bug round, four reports plus
+  follow-ups). **Find:** search already returned `1/2`, but the box reopened holding the old term with nothing
+  marked, so it looked broken. `SearchBox` selects its text on open, and the query travels down
+  `PdfShell`/`PdfMobileShell` â†’ `PdfViewport` â†’ `PageSlot` â€” `PageCanvas` draws `.pdf-search-mark` over every run
+  whose text contains the needle. Closing the box now **clears** the query and the hits (`closeSearch()`), which
+  removes the marks instead of leaving them behind. **Delete:** the handler that removes a picked item never
+  looked at annotations, so Delete did nothing on a highlight. It now removes the picked item, else the picked
+  note, and skips the key whenever a field or `contenteditable` has the focus so a note's own typing is untouched.
+  A note that is still **empty** drops its highlight on Delete/Backspace from the textarea itself â€” the card
+  autofocuses that field, so otherwise the key was swallowed and the highlight could only be removed from the
+  card's button. Note text is also written on unmount (refs, not the closing render's state) so closing the card
+  cannot lose the last keystrokes. **Blank pages:** the rail and the page menu both act on a **display** index, but
+  a blank slot has no source page, so deleting one fell through to `removePage` with a null source. `DisplayPage`
+  gained `blankId`, the model `removeBlank`, the store `removeBlankPage`, and `App.deleteAt` picks the right one;
+  `canDeletePage` keeps the last page. **The rail menu** lost its "Close" row (the card closes with a click
+  anywhere else), and that dismissal is swallowed: `Menu.tsx` and `ThumbnailRail.tsx` listen for **click** in the
+  capture phase and call `preventDefault` + `stopPropagation`, so the press that closes a menu neither selects
+  page text nor opens the note under the pointer. Traps: `MenuItem` passed the click **event** as its argument, so
+  `insertBlankPage(event)` inserted at a non-number index (front of the document) â€” the handler now calls
+  `onSelect()` with no argument; and the dismissal cannot be done on `pointerdown`, because React removes that
+  listener when the menu closes, before the click of the same gesture arrives, which is exactly how the click got
+  through and reopened a note. Navigation by page box also snapped back: `offsetForPage` used an 8 px margin while
+  `pageAtOffset` allowed 8 px of slack, so a freshly scrolled page fell outside its own band â€” the margin is 8 and
+  a round-trip test pins it. **White backing:** a placed text box may now ask for one (`TextItem.background:
+  'white'`, a "White background" checkbox in the dialog); `bake` draws the same patch as a replacement, and the
+  frame shows it, while a replacement is always forced, since it has to hide the run it covers. Verified in
+  Chromium: search `1/2` with 2 marks and 0 after close, box empty on reopen; Delete on an empty note took the
+  highlight from 3 to 2 and held after a reload; the rail menu has four rows and an outside click left
+  `getSelection()` empty, 0 notes open; the blank inserted at display 2 and deleted from the page menu;
+  "White backing" stored `{ kind: 'text', background: 'white' }` and rendered `has-cover`. `npm run gates` exits 0
+  (**34 PDF tests**).
+- **A stamp is composed, not just picked** (feature). The stamp tab is a builder: the usual lines (heading, name,
+  position, organisation, date or reference) plus "+ Add a line", each with **bold** and Small/Medium/Large,
+  inside a **paper stamp** frame (double or single rule, four inks, capitals) or a clean **digital** frame, with
+  alignment; a live preview draws the stamp as it is typed. The design is kept with the preset (`StampDesign` on
+  `SignaturePreset`), so a saved stamp reopens in the form (`✎` on its tile) and updates in place — `savePreset`
+  now takes an optional `id` — and picking it re-renders from the settings, so the picture is never stale. Any
+  line left empty is not drawn, and a multiline entry is split into its own lines. The stock words are one-line
+  designs and are not saved. A stamp's **size is in points**, and the page places it at that size
+  (`PresetPick.widthPoints` ÷ the page's own width in `App`) rather than at a guessed share of the page, so 19 pt
+  text is 19 pt on the paper. Bytes are drawn at 4× into a transparent PNG — a raster picture in the file, sharp
+  at print size but not vector text. Traps: the canvas resolution must not decide the physical size (hence points
+  in `stampLayout` and a scale used only for pixels), and line ids are made when a line is created so React keys
+  stay put when one is removed. Verified in Chromium: the builder is 760 px wide with five line rows; the preview
+  grew 189 × 83 → 246 × 178 as the lines were filled; the placed stamp measured 246 × 178 px at 100 % on a 420 pt
+  page (its designed width); the preset stored `design` with all five lines; `✎` loaded them back; **Save and
+  place** updated the same id after the position was changed; the paper and digital renders carry `#b03a2e` /
+  `#17251b` ink and a frame in the pixels. **6 tests** for `stampLayout`, `stampLabel` and the stock design.
+- **A highlight opens its note again, and the toolbar is one row** (fix + layout round). **The note:** every
+  highlight was drawn twice — once by `AnnotationLayer` (the button that selects it and mounts the note card) and
+  once by `EditLayer` as an inert span, which had `z-index: 3` over the button and `pointer-events: auto`, so it
+  took the click and nothing happened; the second copy also darkened the tint and re-drew baked highlights after
+  a save. `EditLayer` no longer draws highlights at all: the annotation layer is their one owner, and the bake
+  still reads them from the notes table. **The bar:** 21 controls wrapped onto a second row at 808 px, which put
+  the page box over the 168 px rail column (reported as the page count appearing "within the thumbnail area").
+  Rotation went back into the page menu, the four insert tools (text box, edit text, picture, signature/stamp)
+  went into an `insert` menu with labels, and the highlight swatches became a palette that hangs below their
+  button instead of widening the bar. New `presentations/ui/Menu.tsx` (`MenuButton`, `MenuItem`, outside-click and
+  Escape close, a ✓ on a mode that is on) is shared with `PageMenu`. 16 controls, one 51 px row at 808 px, nav at
+  x = 228 — right of the rail. Verified in Chromium at 808 × 700: the note card opens on a highlight click and
+  keeps typed text; the insert menu lists the four items and places a text box; the page menu lists rotate
+  left/right, insert blank and delete; the palette shows four swatches without changing the bar's width.
+  `npm run gates` exits 0 (26 PDF tests).
+- **Placed items get handles, a text box opens again, the page's own text can be replaced, and signatures and
+  stamps have a shelf** (feature round on the edit milestone).
+  **The text field that ate words:** `TextDialog`'s effect depended on `text`, so every keystroke re-ran
+  `field.select()`; the next character replaced the selection, and "typed words" arrived as `s`. Focus and select
+  happen once now, in their own mount effect. The same dialog serves three modes (`new`, `placed`, `run`).
+  **Items are editable:** `EditLayer` draws a text or picture as a `.pdf-edit-item` frame — drag the frame to move,
+  drag a corner to resize (pictures keep their shape, text boxes do not), `×` or `Delete` removes it. A gesture
+  writes one history state on pointer-up, and a click that moved nothing writes none. Items are the only
+  interactive thing in the layer and only while no tool is armed (`is-idle`), so drawing, highlighting and the
+  page's text selection are untouched. Double-clicking a box reopens the text dialog and updates it in place.
+  **Replacing the page's own text:** `TextPiece` gained `box` (normalised, measured on the scale-1 viewport with the
+  page's turn applied) and `points`; `PageCanvas` paints a `.pdf-run-layer` of those boxes in `textEdit` mode and a
+  click opens the dialog prefilled with the run. The replacement is a `text` item with `replaced` set; `bake`
+  draws a white rectangle over the box before the words, and the frame paints the same white on screen, so
+  moving or resizing the box moves the patch with it. An empty replacement erases the run. Trap recorded: the
+  transform's axes already carry the font size, so multiplying them by `points` again produced a page-sized
+  cover — the axes are divided by `points` first, which also makes a quarter-turned run's box (28 × 169, not
+  169 × 28) correct. The invisible spans could not be the click targets: on a rotated page two runs overlap.
+  **Wrapping:** `drawText` breaks lines at spaces to the item's width (`wrapLine`, **2 tests**), matching the box
+  on screen, which no longer clips its text.
+  **The shelf:** the edit database went to **v2** with a `presets` table (`listPresets`, `savePreset`,
+  `deletePreset`); a drawn or uploaded signature is kept automatically, and the dialog has `Signature` / `Stamp`
+  tabs, a grid of saved pictures, `×` per preset, five stock stamps (APPROVED, REVIEWED, DRAFT, PAID, VOID) and a
+  field that turns a word into a stamp (a bordered PNG on a transparent ground) and keeps it. A placed picture is
+  copied into its own blob, so deleting a preset cannot break a document that used it.
+  **Placing where you click:** choosing a picture stores it and arms the page (`EditTool 'place'`); the next click
+  drops it centred there with its own aspect (page width ÷ height taken into account), selects it for moving, and
+  the status bar says so; Escape cancels. The toolbar gained **Edit text already in the page (E)** and the
+  `editText` icon. Verified in Chromium: typing kept the whole string; a box moved by exactly 50 px and resized by
+  60 px, one Undo restored it and one Redo re-applied it; a run replacement's patch measured `169 × 28` at the run
+  box and `30 × 169` on a quarter-turned page; a saved signature reappeared in the shelf and placed again; a stock
+  stamp and a saved custom stamp both landed; the baked copy of a replaced run extracts `Hi Lembaran` as real text.
+  `npm run gates` exits 0 (26 PDF tests).
+- **The view catches up with the record: strokes, turned pages, blanks, zoom, text and undo** (fix round on the
+  same milestone). Six bugs, all in how the edit round *drew* what it had recorded — the bytes were right.
+  **Ink:** a stored stroke was drawn with `vector-effect: non-scaling-stroke` and `stroke-width: 0.005` (from
+  `item.width / 400`), which is 0.005 of a CSS pixel, so the line disappeared the moment the pointer came up while
+  the in-progress preview (no `vector-effect`) looked correct. `EditLayer` now takes the page's `scale` and draws
+  `item.width * scale` non-scaling, and the preview uses the same rule. **Turned pages:** the slot was sized from
+  the page's own paper (`box.width`) while pdf.js drew the turned viewport (`box.height` wide), and the shared
+  `.lb-surface > canvas { max-width: 100% }` then squeezed that canvas into the narrow slot — a 90° A4 page came
+  out `420 × 420`. `displayBox(page, source)` in `feature/edit/model.ts` returns the paper a display position
+  shows (turned with the page, or the blank's own size) and **3 tests** cover it; `PdfViewport` sizes a slot and
+  answers `pageBox()`/`fitWidth()` from it. **Zoom past the window:** `.pdf-slot { max-width: 100% }` and the same
+  canvas rule clamped every page to the reader's width while the height kept growing, so 400% drew a 1680 px page
+  as 799 px of stretched pixels; `.pdf-pages` is `align-items: flex-start` with `.pdf-slot { margin-inline: auto }`,
+  which keeps a fitting page centred and lets a larger one overflow and scroll, and `.pdf-page > canvas` has
+  `max-width: none`. **Blank pages:** the blank's `Surface` held only a clipped span, so `width: fit-content`
+  collapsed the sheet to `0 × 0` — the *slot* was paper-sized (which is what was measured last round) and the
+  page itself was invisible; `.pdf-page-blank` is `width/height: 100%`. **Text:** a placed box drew at `size` CSS
+  px at any zoom, so it shrank against the page as the reader zoomed and no longer matched the `size` points baked
+  into the file; it draws `size * scale` now, like ink. **Undo:** `usePdfEdits` pushed history *inside* the
+  `setState` updater, which StrictMode invokes twice, so every edit left a duplicate state and Undo worked on the
+  first press then looked dead; history moves outside the updater and every mutator reads a state ref, so two
+  commits in one tick compose. **Pictures:** the edit layer revoked every object URL whenever `items` changed,
+  breaking pictures already on the page (`ERR_FILE_NOT_FOUND` in the console) and re-reading them; one URL is made
+  per blob and revoked with the page. Smaller: the rail's `Insert blank after` ignored the card it was opened on
+  and inserted after the current page (`onInsertBlankPage(display?)`), the phone's page box counted `doc.numPages`
+  instead of the edited sequence, and Undo/Redo wore the prev/next chevrons — `undo`/`redo` icons were added to
+  the shared set. Verified in Chromium: a committed stroke computes `2px` (`6px` at 300%), a quarter-turned page
+  is `595 × 420` with a canvas of the same size, a blank sheet measures `595 × 420` and its rail card `118 × 83`,
+  300% draws a `1780px` slot that scrolls, `24 px` text draws at `72 px`, one Undo removes exactly one item, and
+  placing a signature leaves the older picture loaded with no console error. `npm run gates` exits 0 (23 PDF tests).
+- **The PDF reader can write: page tools, placed items, save and compression** (feature, desktop first).
+  `pdf-lib` 1.17.1 (MIT) joined `Lembaran.Pdf`; it is the only writer, and it is loaded with the reader, not the
+  hub (bundle 804.6 kB -> 1244.6 kB raw, 245.8 -> 426.9 kB gzip).
+  `storage/edits.ts` opens database `lembaran-pdf-edits` (tables `edits`, `blobs`); `feature/edit/` holds the
+  record (`usePdfEdits`: plan + items, undo/redo as whole states, a dirty flag, a 300 ms write) and the pure
+  model (`displayPages`, `displayToSource`, `sourceToDisplay`, `deleteSourcePage`, `rotateSourcePage`,
+  `insertBlank`, `rotateBy`) with **7 tests**. `PdfViewport` and `ThumbnailRail` now draw a **display list**
+  instead of `1..numPages`, so a deleted page is absent, a rotated page renders with pdf.js's own rotation and a
+  blank page is a `Surface`. The toolbar gained a **page menu** (rotate left/right, insert blank after, delete)
+  and a **save button** with a dirty dot; the `Place` segment holds ink, text and image tools, and
+  `EditLayer` draws what they produce (ink as a polyline, text as a positioned box, images from IndexedDB
+  blobs) plus the highlights that still live in the notes table.
+  `feature/save/bake.ts` replays the record with pdf-lib: pages in order, a rotated page rebuilt as a page of
+  the swapped size with the old one drawn inside it (so `/Rotate` stays 0 and normalised boxes mean one thing),
+  blanks at their index, then highlights, ink, images and text in display coordinates.
+  `feature/save/save.ts` writes the bytes **over the original file** through the handle the recents table kept
+  (`recentByPath`, new `ensureWritePermission` in the framework), re-ingests the saved bytes to OPFS, repoints
+  the recent row, re-keys the notes to the new document key (`rekeyAnnotations`, marked `baked` so the overlay
+  stops drawing them), clears the record and reloads the viewer; with no handle it falls back to
+  `saveBytesAs` and says it saved a copy.
+  `feature/compress/` adds the two passes the Save dialog offers ? `rewriteStructure` (lossless: fresh document,
+  object streams) and `compressImages` (DCTDecode XObjects only: decode, shrink past 1600 px, re-encode as JPEG,
+  never grow; CMYK/masked/JPX streams are counted as skipped) ? and **text is never rasterised**.
+  Traps recorded: a hook placed below an early return unmounted the reader; `Omit` on a union lost every
+  variant's own fields (fixed with a distributive `NewEditItem`); `embedPage` refuses a page with no contents.
+  Verified in Chromium against `samples/hello.pdf` seeded into OPFS with a real handle: the page menu reported
+  `[Rotate left, Rotate right, Insert blank after, Delete page]`; rotate turned page 1's canvas `420x595 ->
+  595x420` and its rail card `118x167 -> 118x83`; insert blank gave 3 slots with one `data-blank`; delete went
+  back to 2; Save (overwrite + structure) answered "Saved over the original: 1 KB." and the reloaded document
+  drew page 1 at `595x420` ? the rotation was in the bytes; a text box and an ink stroke placed through the
+  tools persisted as `items: [text, ink(3 points)]` and marked the button "Save PDF, edited". `pdf-lib` row
+  added to `FRAMEWORK.md`, notices regenerated (14 dependencies), `licenses:check` passed for 10.
+- **Undo/redo, page tools on the bar, fit toggle, rail menu and reorder, and a signature pad** (UI round on the
+  same milestone). `usePdfEdits` gained `movePage` (a splice of `order`) and `insertBlankPage(at, size)`;
+  `PdfViewport` measures every page's paper once (`getViewport({scale:1, rotation:0})`) so a slot's placeholder,
+  a blank page and the rendered page agree ? the hard-coded `PAGE_ASPECT` was why a non-A4 page looked stretched ?
+  and its API grew `fitHeight()` and `pageBox(display)`. The toolbar now carries **Undo / Redo** (`Ctrl+Z`,
+  `Ctrl+Shift+Z`, `Ctrl+Y`), **rotate left/right as their own icons**, and the fit control left the zoom segment
+  to become a width/height toggle. `ThumbnailRail` cards are draggable (drop writes the new order) and answer a
+  right-click with rotate / insert blank / delete. The image tool opens the picker from the icon and drops the
+  picture on the current page. The edit layer is inert (`pointer-events: none`) unless a tool is active, so it no
+  longer eats text selection, and a one-point tap becomes a dot instead of nothing ? the "cannot draw" report.
+  `SignatureDialog` combines signature and stamp: draw on a pad (transparent PNG via `toBlob`) or upload a file,
+  and it is stored as an `image` item with `role: 'signature'`, so it places, moves and bakes through the path
+  that already existed. Verified in Chromium: rotate via the bar `420x420 -> 420x595`, Undo `-> 420x420`, Redo
+  `-> 420x595`; rail menu `[Rotate left, Rotate right, Insert blank after, Delete page, Close]`; a blank page
+  measured the same paper as the page it followed; a drawn signature placed one image item and stored
+  `{kind: image, role: signature}` with a 2.3 kB PNG.
+- **Not built yet, recorded so it is not assumed**: editing text that is already in the page (the plan's
+  cover-and-replace patch, then the `Tj`/`TJ` spike), resizing or moving a placed item with handles, an undo
+  control in the UI (the store has the history), and the same tools on the phone. Each is listed in
+  [LIMITATION.md](LIMITATION.md).
+
 ## 2026-11-24
 
 - **Pastel green becomes the palette, the hub becomes an app, and a folder can be bound for good** (UI
@@ -108,6 +355,70 @@ that were made instead of code.
   `.hub-overlay-modes` and `.hub-search-overlay-phone` rules in `hub-phone.css`. The desk keeps its overlay
   untouched. The phone panel is now exactly: header (name, count chip, change folder, unbind), breadcrumb, list,
   footer — one scroller, no dialog.
+- **A phone reader stopped repeating the file name, and CSV moved its controls into the header** (UI polish,
+  same day). The hub's strip already prints `‹ cities.csv` one line above the frame, so every phone shell
+  printed the same name a second time: `isFramed()` (`Lembaran.UI/src/shell/frame.ts`, `window.top !==
+  window.self`) makes `PhoneShell` drop its title while framed, and `PdfMobileShell` does the same by hand.
+  `PhoneShell` gained an `actions` slot at the left of that now-single header line, with
+  `.lb-phone-end` pushing a control to the far right. CSV uses it: the old bottom bar of three labelled
+  buttons became three 44 px icons on the header row — `open` (folder) at the left, the separator as a
+  `columns` icon with the native `<select>` laid over it at opacity 0 (so the words live in the list, one tap,
+  no popover to build), and full screen as `lb-phone-end` at the right edge. The sheet's shape moved out of
+  the header to the **bottom right** (`401 × 7`, `csv-phone-size`) beside the selected-cell read-out, which
+  stayed bottom left. The glyph set itself became shared: `Icon`/`IconName` moved from
+  `Lembaran.Pdf/src/presentations/library/Icon.tsx` into `Lembaran.UI/src/components/icons/Icon.tsx` (plus a
+  `columns` glyph) and is exported from `@lembaran/ui`; PDF's `IconButton` and `PdfMobileShell` import it
+  from there. Measured at 390 × 844 with `cities.csv` open: hub bar `‹ cities.csv` 30 px, reader header 49 px
+  with no `.lb-phone-title`, icons at `x 2 / 48` and full screen at `x 334` (the far end), bottom bar 32 px
+  with the read-out at `x 12` and `401 × 7` at `x 341`, grid stage 733 px tall.
+- **CSV cells resize, and the shape is kept per file** (feature). `feature/grid/sizes.ts` adds `GridSizes`
+  (sparse `columns` map + one `rowHeight`), `clampColumnWidth`/`clampRowHeight`, `columnOffsets` (prefix sum)
+  and `visibleSlice` (binary search over the offsets, replacing uniform-width arithmetic in the grid) plus the
+  hook `useGridSizes(docKey)`; `CsvGrid` renders a 9 px `.csv-grip` on each header's right edge (drag a
+  column's width) and on each gutter row's bottom edge (drag one height for every row), tracked on `window`
+  during the drag and reset by double-click; `is-col-resizing`/`is-row-resizing` on the grid make the cursor
+  follow the whole surface. Widths persist in `localStorage['lembaran.csv.sizes']` under the file's name,
+  written 300 ms after the last move. Both shells pass `docKey={props.name}`. New
+  `feature/grid/sizes.test.ts` (4 tests) covers clamping, the offsets and the slice. Verified with synthetic
+  pointer drags: column A 148 → 288 with its cells and the canvas total (`1232 px`) following, the header
+  staying in step at `scrollLeft 200`, a row drag 26 → 40 on every row, double-click back to 148, and the
+  saved shape reapplied on reopen; on a phone the grips measure 18 × 28 and 55 × 14.
+- **Header round two: uniform tiles, a theme switch on a phone, icon-only desk controls, comma by default**
+  (UI polish). The tile board drew its tiles at whatever width each label needed, so `POWERPOINT` made one
+  box half again as wide as the rest — tiles are now a fixed `62 px` and the long reader name is shown as
+  `Slides` (`SHORT_LABELS` in `CountChip.tsx`), measured at `62 / 62 / 62 / 62 / 62 / 62` in a `420 px`
+  board. `PhoneShell` now always ends its header line with `<ThemeToggle />` plus an optional `end` control
+  after it (a phone has no hub bar while a document is open), so CSV's full screen lands at the far right
+  with the theme switch to its left (`x 296` and `x 342` in a 390 px frame, after `open` at `2` and the
+  separator at `48`); `PdfMobileShell` puts the same switch before its full-screen button. The CSV desk
+  toolbar lost its words: `Open` and `Full screen` are `Icon` buttons now (`open`, `fullscreen` /
+  `exitFullscreen`), and the separator defaults from the extension — `defaultDelimiter()` in
+  `feature/grid/store.ts` returns `,` for a `.csv` and `\t` for a `.tsv`, so a CSV opens as `Comma` with
+  `Detect` still one choice away (new test in `store.test.ts`). The desk bar's search lost its 460 px cap
+  (`flex: 1`, measured `789 px` in a 1200 px window) and the scale chip is shown at every value on a desk
+  and not at all on a phone.
+- **The phone's scrollbar moved to the window's end** (UI fix). It floated 14 px inside the shell's padding,
+  which read as an unfinished box with a cut-off card under it. `.hub-main` now keeps only its left inset and
+  the scrolling element owns the right padding: a section on Readers/Recent, and the folder list inside the
+  pane (the pane itself drops the right padding through `.hub-main > section.hub-pane`, since the plain
+  `> section` rule outranks `.hub-pane` on specificity). Each scroller adds 14 px of right padding as the gap to
+  its bar, 14 px under the last card, and `scrollbar-gutter: stable`. Verified at 390 × 560 on both tabs:
+  scroller right edge `390`, bar `10 px`, card edge `366` (24 px gap), `14 px` under the last card when
+  scrolled to the end.
+- **The desk hub scrolls below its bar, not under it** (UI fix). `HubShell` had a sticky `blur` bar over a
+  scrolling `.hub-shell`, so content slid behind the header and the page's own scrollbar ran the whole window
+  height. The shell is now `overflow: hidden` with a `flex: none` bar and foot, and `.hub-main` is the
+  remainder (`flex: 1; min-height: 0; overflow-y: auto`, thin bar, overscroll contained); the 1080 px measure
+  moved into a new `.hub-main-inner` so the scroller itself is full width and its scrollbar ends at the window's
+  edge. Verified in 900 × 620 and 1440 × 900 frames: bar `0–57`, main top `57` (exactly under it), foot pinned
+  at the bottom (`559–620` / `839–900`), `main.scrollTop` accepted `400`, and `documentScrolls: false` in both —
+  the phone shell is untouched (`mainOverflow: hidden`, its section still scrolls to `390`).
+- **The phone folder pane keeps its inset where it matters** (UI fix). Letting the list reach the window's end
+  had also pulled the folder head to the border, so the change/expand icons sat against it. The pane's
+  `padding-right` is back and only `.hub-browse-phone` steps past it (`margin-right: -14px`, with the gap
+  restored as its own padding), and a folder row now carries `padding: 10px 14px` instead of `0 12px` so its
+  label, icon and chevron sit inside the button. Verified at 390 px: head right `376`, last action icon `376`,
+  list right `390`, rows `14 → 366`, chevron `14` from the row's edge.
   Then the phone bar became **one row** — mark, wordmark, a 9 px `0.1.0-alpha` chip, the search field and the
   theme toggle (`__APP_VERSION__`, defined by both Vite configs from `Lembaran.App/package.json`, so the version
   is not typed twice) — and the stuck helper was fixed: `CountChip` replaced the span-with-`:focus` chip, so a

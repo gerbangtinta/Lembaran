@@ -1,13 +1,8 @@
-/* CSV phone only: the selected-cell read-out and the bottom row. Never loaded by the desktop shell. */
-
-.csv-phone-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
+/* CSV phone only: the selected-cell read-out and the separator control. Never loaded by the desktop shell. */
 
 .csv-phone-cell {
+  flex: 1;
+  min-width: 0;
   font-size: 11px;
   color: var(--lb-text-dim);
   font-variant-numeric: tabular-nums;
@@ -16,20 +11,35 @@
   text-overflow: ellipsis;
 }
 
-.csv-phone-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* the sheet's shape sits at the bottom right, beside the read-out, not in the header */
+.csv-phone-size {
+  flex: none;
+  font-size: 11px;
+  color: var(--lb-text-dim);
+  font-variant-numeric: tabular-nums;
 }
 
-.csv-phone-select {
-  flex: 1;
-  min-height: 44px;
+/* the separator is an icon with a native select laid over it: one tap, no popover to build */
+.csv-phone-sep {
+  position: relative;
+  cursor: pointer;
+}
+
+.csv-phone-sep-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
   font: inherit;
-  font-size: 13px;
-  padding: 0 8px;
-  border-radius: 10px;
-  border: 1px solid var(--lb-border);
-  background: var(--lb-surface-2);
-  color: var(--lb-text);
+}
+
+/* a finger needs more than the 9 px a mouse can hit: the grid's resize borders widen on a phone */
+.csv-grip-col {
+  width: 18px;
+}
+
+.csv-grip-row {
+  height: 14px;
 }

@@ -14,6 +14,20 @@
   scrollbar-width: thin;
 }
 
+/* A reader may pin one control under the cards — the PDF reader keeps its page switch here, next to the
+   thumbnails it moves through, rather than on the top bar. It sticks to the bottom of the rail, reaches the
+   rail's edges by cancelling its padding, and sits at the bottom even when the cards are few. */
+.lb-panel-foot {
+  position: sticky;
+  bottom: -8px;
+  margin: auto -8px -8px;
+  padding: 6px 8px;
+  display: flex;
+  justify-content: center;
+  background: var(--lb-surface);
+  border-top: 1px solid var(--lb-border);
+}
+
 .lb-panel-item {
   display: grid;
   /* the number column is fixed and the card takes the rest: the card must never size

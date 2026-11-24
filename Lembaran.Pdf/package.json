@@ -9,12 +9,17 @@
     "slug": "pdf",
     "name": "PDF",
     "blurb": "Continuous scroll, selectable text, find in document, notes.",
-    "extensions": ["pdf"],
-    "mimeTypes": ["application/pdf"]
+    "extensions": [
+      "pdf"
+    ],
+    "mimeTypes": [
+      "application/pdf"
+    ]
   },
   "dependencies": {
     "@lembaran/framework": "*",
     "@lembaran/ui": "*",
+    "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.5.438"
   },
   "scripts": {

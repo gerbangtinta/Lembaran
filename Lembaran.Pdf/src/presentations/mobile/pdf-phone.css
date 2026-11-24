@@ -14,6 +14,11 @@
   max-width: none;
 }
 
+/* framed by the hub: no name to repeat, so the page box takes the left and the rest keeps to the right */
+.pdf-phone-header > .pdf-pagebox {
+  margin-right: auto;
+}
+
 .pdf-phone-sheet,
 .pdf-phone-hint {
   padding: 8px 10px;

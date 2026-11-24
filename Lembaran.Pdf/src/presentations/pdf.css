@@ -56,6 +56,33 @@
   background: color-mix(in srgb, var(--lb-accent) 10%, var(--lb-surface-2));
 }
 
+/* the page switch sits in the rail's 168 px footer, so it is a size down and its own width */
+.pdf-seg.is-compact {
+  padding: 1px;
+  gap: 0;
+}
+
+.pdf-seg.is-compact .pdf-ib {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.pdf-seg.is-compact .pdf-pagebox {
+  gap: 3px;
+  padding: 0 3px;
+}
+
+.pdf-seg.is-compact .pdf-pageinput {
+  width: 4ch;
+  min-height: 26px;
+}
+
+.pdf-seg.is-compact .pdf-pagecount {
+  font-size: 11px;
+}
+
 .pdf-ib {
   display: inline-flex;
   align-items: center;
@@ -276,17 +303,25 @@
 .pdf-pages {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* auto margins centre a page that fits and leave one that does not flush left, reachable by scrolling;
+     `align-items: center` would clip the left edge of a page wider than the reader */
+  align-items: flex-start;
   gap: 18px;
 }
 
 .pdf-slot {
   flex: none;
-  max-width: 100%;
+  margin-inline: auto;
 }
 
 /* the sheet — white, edge, shadow, shrink-to-content — comes from the shared `Surface`; the
    `pdf-page` class stays because the text and annotation layers are positioned against this box */
+.pdf-page > canvas {
+  /* the slot already carries the zoom: a `max-width` here would squeeze a page past the reader's width
+     instead of letting the viewport scroll, and a rotated page would come out square */
+  max-width: none;
+}
+
 .pdf-page-text {
   position: absolute;
   inset: 0;
@@ -305,6 +340,46 @@
 
 .pdf-page-text span::selection {
   background: color-mix(in srgb, #5a9ae8 45%, transparent);
+}
+
+/* picking a run to replace: the page's own text is inert, and each run becomes a box you can point at */
+.pdf-page-text.is-editing {
+  user-select: none;
+  pointer-events: none;
+}
+
+/* a find hit: the run that contains the term, marked on the paper so a count is not the only answer */
+.pdf-search-mark {
+  position: absolute;
+  z-index: 2;
+  border-radius: 2px;
+  background: color-mix(in srgb, #e8b44a 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #b06a4a 75%, transparent);
+  pointer-events: none;
+}
+
+.pdf-run-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+}
+
+.pdf-run {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  background: transparent;
+  cursor: text;
+}
+
+.pdf-run:hover,
+.pdf-run:focus-visible {
+  border-color: color-mix(in srgb, var(--lb-accent) 70%, transparent);
+  background: color-mix(in srgb, var(--lb-accent) 20%, transparent);
+  outline: none;
 }
 
 .pdf-page-error {
@@ -629,4 +704,888 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* ---- page menu: the three actions that change the sequence itself ---- */
+
+.pdf-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.pdf-menu-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 176px;
+  padding: 4px;
+  border: 1px solid var(--lb-border-strong);
+  border-radius: 10px;
+  background: var(--lb-surface);
+  box-shadow: var(--lb-shadow);
+}
+
+.pdf-menu-list button {
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pdf-menu-list button:hover:not(:disabled) {
+  background: var(--lb-surface-2);
+}
+
+.pdf-menu-list button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* a mode that is on, marked on its own row instead of by a pressed button somewhere else on the bar */
+.pdf-menu-list button[aria-checked='true']::before {
+  content: '✓';
+  margin-right: 6px;
+  color: var(--lb-accent);
+}
+
+.pdf-menu.is-right .pdf-menu-list {
+  left: auto;
+  right: 0;
+}
+
+.pdf-menu-danger {
+  color: var(--lb-danger);
+}
+
+/* the highlight colours hang below their button: the bar does not grow when the tool comes on */
+.pdf-annotate {
+  position: relative;
+}
+
+.pdf-palette {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--lb-border-strong);
+  border-radius: 999px;
+  background: var(--lb-surface);
+  box-shadow: var(--lb-shadow);
+}
+
+/* a page the record invented: paper, no glyphs — the slot holds the size, so the sheet fills it */
+.pdf-page-blank {
+  width: 100%;
+  height: 100%;
+  background: var(--lb-paper);
+}
+
+/* ---- saving: the dialog, and the dot that says the file is behind the record ---- */
+
+.pdf-ib.is-dirty {
+  position: relative;
+  color: var(--lb-accent);
+}
+
+.pdf-dirty-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--lb-accent-2);
+}
+
+.pdf-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: color-mix(in srgb, #06110a 52%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.pdf-modal-panel {
+  width: min(460px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--lb-border-strong);
+  border-radius: 14px;
+  background: var(--lb-surface);
+  box-shadow: var(--lb-shadow);
+}
+
+.pdf-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pdf-modal-head h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 620;
+}
+
+.pdf-modal-note,
+.pdf-modal-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--lb-text-dim);
+  line-height: 1.5;
+}
+
+.pdf-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pdf-check input {
+  margin-top: 3px;
+  accent-color: var(--lb-accent);
+}
+
+.pdf-check small {
+  display: block;
+  font-size: 11.5px;
+  color: var(--lb-text-dim);
+}
+
+.pdf-check-sub {
+  align-items: center;
+  gap: 10px;
+  padding-left: 26px;
+}
+
+.pdf-check-sub select {
+  min-height: 30px;
+  font: inherit;
+  font-size: 12.5px;
+  border-radius: 8px;
+  border: 1px solid var(--lb-border);
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+}
+
+.pdf-modal-error,
+.pdf-modal-ok {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.pdf-modal-error {
+  border: 1px solid color-mix(in srgb, var(--lb-danger) 50%, var(--lb-border));
+  background: color-mix(in srgb, var(--lb-danger) 10%, var(--lb-surface));
+  color: var(--lb-text);
+}
+
+.pdf-modal-ok {
+  border: 1px solid color-mix(in srgb, var(--lb-accent) 45%, var(--lb-border));
+  background: color-mix(in srgb, var(--lb-accent) 10%, var(--lb-surface));
+  color: var(--lb-text);
+}
+
+.pdf-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.pdf-primary {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--lb-accent) 70%, transparent);
+  border-radius: 9px;
+  background: var(--lb-accent);
+  color: var(--lb-paper);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 560;
+  cursor: pointer;
+}
+
+.pdf-primary:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.pdf-ghost {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pdf-ghost:hover:not(:disabled) {
+  background: var(--lb-surface-2);
+}
+
+/* ---- placed items: the layer above the glyphs that holds what the record invented ---- */
+
+/* the layer is inert until a tool is picked: otherwise it would swallow the text selection above it */
+.pdf-edit-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pdf-edit-layer.is-drawing,
+.pdf-edit-layer.is-placing {
+  z-index: 6;
+  pointer-events: auto;
+}
+
+.pdf-edit-layer.is-drawing {
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.pdf-edit-layer.is-placing {
+  cursor: copy;
+}
+
+/* a placed item is a frame with the thing inside it: the frame moves and resizes, the content fills it */
+.pdf-edit-item {
+  position: absolute;
+  pointer-events: none;
+  touch-action: none;
+}
+
+/* only an idle reader lets a placed item take the pointer: a tool needs the page to itself */
+.pdf-edit-layer.is-idle .pdf-edit-item {
+  pointer-events: auto;
+  cursor: move;
+}
+
+.pdf-edit-item.is-selected {
+  outline: 1px solid var(--lb-accent);
+}
+
+/* a replacement owns the white patch the writer will draw over the run it covered */
+.pdf-edit-item.has-cover {
+  background: #fff;
+}
+
+.pdf-edit-text {
+  position: absolute;
+  inset: 0;
+  display: block;
+  padding: 1px 2px;
+  line-height: 1.25;
+  white-space: pre-wrap;
+  /* the file writes the whole text, wrapping only at spaces: a box that is too short must not hide it here */
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pdf-edit-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.pdf-edit-handle {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  margin: -6px 0 0 -6px;
+  border: 2px solid var(--lb-accent);
+  border-radius: 3px;
+  background: var(--lb-paper);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
+}
+
+.pdf-edit-handle.is-nw { left: 0; top: 0; cursor: nwse-resize; }
+.pdf-edit-handle.is-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.pdf-edit-handle.is-sw { left: 0; top: 100%; cursor: nesw-resize; }
+.pdf-edit-handle.is-se { left: 100%; top: 100%; cursor: nwse-resize; }
+
+.pdf-edit-remove {
+  position: absolute;
+  top: -13px;
+  right: -13px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--lb-danger) 60%, transparent);
+  border-radius: 999px;
+  background: var(--lb-paper);
+  color: var(--lb-danger);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pdf-edit-ink,
+.pdf-edit-stroke {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pdf-edit-ink.is-selected {
+  filter: drop-shadow(0 0 1px var(--lb-accent));
+}
+
+.pdf-text-input {
+  min-height: 96px;
+  padding: 9px 10px;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.pdf-text-input:focus {
+  outline: none;
+  border-color: var(--lb-accent);
+}
+
+.pdf-text-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pdf-text-row .pdf-check-sub {
+  padding-left: 0;
+}
+
+/* ---- the rail: a page menu on right-click, and a card that can be dragged ---- */
+
+.pdf-rail-item {
+  position: relative;
+}
+
+.pdf-rail-item.is-dragging {
+  opacity: 0.5;
+}
+
+.pdf-rail-item[draggable='true'] {
+  cursor: grab;
+}
+
+/* a popup over the page, placed where the pointer was: it must not take a slot in the rail's column, or the
+   cards below it move down every time it opens */
+.pdf-rail-menu {
+  position: fixed;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 172px;
+  padding: 6px;
+  border: 1px solid var(--lb-border-strong);
+  border-radius: 10px;
+  background: var(--lb-surface);
+  box-shadow: var(--lb-shadow);
+}
+
+.pdf-rail-menu-head {
+  padding: 2px 8px 4px;
+  font-family: var(--lb-mono);
+  font-size: 11px;
+  color: var(--lb-text-dim);
+}
+
+.pdf-rail-menu button {
+  /* the global tap size (44 px) is for a finger on a phone, not for four rows in a context menu */
+  min-height: 0;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pdf-rail-menu button:hover:not(:disabled) {
+  background: var(--lb-surface-2);
+}
+
+.pdf-rail-menu button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ---- signature and stamp: a pad to draw on, or a file to hand over ---- */
+
+.pdf-signature-pad {
+  border: 1px dashed var(--lb-border-strong);
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 38px, color-mix(in srgb, var(--lb-border) 55%, transparent) 38px 39px),
+    var(--lb-surface-2);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.pdf-file-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.pdf-file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pdf-file-button.is-busy {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ---- the shelf: signatures and stamps kept between documents ---- */
+
+.pdf-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid var(--lb-border);
+  border-radius: 10px;
+  background: var(--lb-surface-2);
+}
+
+.pdf-tab {
+  flex: 1;
+  min-height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pdf-tab.is-on {
+  background: var(--lb-accent);
+  color: var(--lb-accent-contrast);
+}
+
+.pdf-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  max-height: 138px;
+  padding: 2px;
+  overflow-y: auto;
+}
+
+.pdf-preset {
+  position: relative;
+}
+
+.pdf-preset-pick {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 54px;
+  padding: 6px;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-paper);
+  cursor: pointer;
+}
+
+.pdf-preset-pick:hover:not(:disabled) {
+  border-color: var(--lb-accent);
+}
+
+.pdf-preset-pick img {
+  max-width: 100%;
+  max-height: 44px;
+  object-fit: contain;
+}
+
+.pdf-preset-pick span {
+  font-size: 11px;
+  color: var(--lb-text-dim);
+}
+
+.pdf-preset-del {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  border: 1px solid var(--lb-border);
+  border-radius: 999px;
+  background: var(--lb-surface);
+  color: var(--lb-text-dim);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pdf-stamp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pdf-chip {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--lb-border);
+  border-radius: 999px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.pdf-chip:hover:not(:disabled) {
+  border-color: var(--lb-accent);
+  color: var(--lb-accent);
+}
+
+.pdf-chip.is-on {
+  border-color: var(--lb-accent);
+  background: color-mix(in srgb, var(--lb-accent) 12%, var(--lb-surface-2));
+  color: var(--lb-accent);
+}
+
+.pdf-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---- compress: a size to aim at, and the numbers the attempt reached ---- */
+
+.pdf-size-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pdf-size-target input {
+  width: 8ch;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--lb-border);
+  border-radius: 7px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pdf-size-report {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-surface-2);
+  font-size: 12.5px;
+  color: var(--lb-text-dim);
+}
+
+.pdf-size-report strong {
+  color: var(--lb-text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* the way out of an armed tool, next to the tool itself */
+.pdf-tool-done {
+  min-height: 30px;
+  border-color: color-mix(in srgb, var(--lb-accent) 55%, var(--lb-border));
+  color: var(--lb-accent);
+  background: color-mix(in srgb, var(--lb-accent) 10%, var(--lb-surface-2));
+}
+
+.pdf-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.pdf-field:focus {
+  outline: 2px solid var(--lb-accent);
+  outline-offset: 1px;
+}
+
+/* ---- composing a stamp: lines on the left, the stamp itself on the right ---- */
+
+.pdf-modal-panel.is-wide {
+  width: min(760px, 94vw);
+}
+
+.pdf-stamp-builder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.pdf-stamp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pdf-stamp-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+
+.pdf-stamp-row .pdf-check-sub {
+  padding-left: 0;
+}
+
+.pdf-stamp-legend {
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lb-text-dim);
+}
+
+.pdf-stamp-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdf-stamp-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pdf-line-b,
+.pdf-line-del {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid var(--lb-border);
+  border-radius: 7px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  font: inherit;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.pdf-line-b.is-on {
+  border-color: transparent;
+  background: var(--lb-accent);
+  color: var(--lb-accent-contrast);
+}
+
+.pdf-line-del {
+  font-weight: 400;
+  color: var(--lb-text-dim);
+}
+
+/* The handle that reorders a stamp row: a hand's grip, at the left of the row so the order reads downwards.
+   The row holds a text field, so the drag starts here and nowhere else. */
+.pdf-row-grip {
+  flex: none;
+  width: 16px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--lb-text-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+}
+
+.pdf-row-grip:hover {
+  color: var(--lb-accent);
+  background: color-mix(in srgb, var(--lb-text) 8%, transparent);
+}
+
+.pdf-row-grip:active {
+  cursor: grabbing;
+}
+
+.pdf-row-grip:focus-visible {
+  outline: 2px solid var(--lb-accent);
+  outline-offset: 1px;
+}
+
+/* while a row is lifted, and where it would land */
+.pdf-stamp-line.is-dragging {
+  opacity: 0.45;
+}
+
+.pdf-stamp-line.is-drop {
+  box-shadow: inset 0 2px 0 var(--lb-accent);
+}
+
+.pdf-line-del:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pdf-line-size {
+  flex: none;
+  height: 30px;
+  padding: 0 4px;
+  border: 1px solid var(--lb-border);
+  border-radius: 7px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.pdf-ink {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.pdf-ink.is-on {
+  border-color: var(--lb-text);
+}
+
+/* A window of fixed size: the stamp is fitted into it, so a long line shrinks the mark instead of widening the
+   dialog and dragging the form out of shape. */
+.pdf-stamp-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 320px;
+  flex: none;
+  padding: 12px;
+  border: 1px dashed var(--lb-border-strong);
+  border-radius: 10px;
+  background: var(--lb-surface-2);
+}
+
+.pdf-stamp-stage {
+  display: grid;
+  place-items: center;
+  height: 220px;
+  overflow: hidden;
+}
+
+.pdf-stamp-preview canvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.pdf-preset-edit {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  border: 1px solid var(--lb-border);
+  border-radius: 999px;
+  background: var(--lb-surface);
+  color: var(--lb-accent);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .pdf-stamp-builder {
+    grid-template-columns: 1fr;
+  }
+
+  .pdf-stamp-preview {
+    width: 100%;
+  }
+
+  .pdf-stamp-stage {
+    height: 160px;
+  }
 }

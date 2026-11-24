@@ -89,7 +89,8 @@ export function AnnotationLayer({
       }}
       onPointerCancel={() => setDrag(null)}
     >
-      {items.map((item) => (
+      {/* a baked note is already part of the page: drawing its rectangle again would darken the file */}
+      {items.filter((item) => !item.baked).map((item) => (
         <button
           key={item.id}
           type="button"
@@ -122,7 +123,7 @@ export function AnnotationLayer({
       )}
 
       {items
-        .filter((item) => item.id === selectedId)
+        .filter((item) => item.id === selectedId && !item.baked)
         .map((item) => (
           <NoteCard
             key={item.id}
@@ -146,11 +147,33 @@ interface NoteProps {
 function NoteCard({ item, onNote, onDrop, onClose }: NoteProps) {
   const [draft, setDraft] = useState(item.note);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  const draftRef = useRef(item.note);
+  const savedRef = useRef(item.note);
+  const note = useRef(onNote);
+
+  useEffect(() => {
+    note.current = onNote;
+  }, [onNote]);
 
   useEffect(() => {
     setDraft(item.note);
+    draftRef.current = item.note;
+    savedRef.current = item.note;
     areaRef.current?.focus();
   }, [item.id, item.note]);
+
+  // a click on the page unmounts this card: the words typed since the last blur must not go with it
+  useEffect(
+    () => () => {
+      if (draftRef.current !== savedRef.current) note.current(draftRef.current);
+    },
+    [],
+  );
+
+  const save = () => {
+    savedRef.current = draftRef.current;
+    onNote(draftRef.current);
+  };
 
   return (
     <div
@@ -169,8 +192,18 @@ function NoteCard({ item, onNote, onDrop, onClose }: NoteProps) {
         value={draft}
         placeholder="What did you notice here?"
         rows={3}
-        onChange={(event) => setDraft(event.target.value)}
-        onBlur={() => onNote(draft)}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          draftRef.current = event.target.value;
+        }}
+        onBlur={save}
+        onKeyDown={(event) => {
+          // an empty note has nothing to delete letter by letter: Delete takes the highlight away
+          if (event.key !== 'Delete' && event.key !== 'Backspace') return;
+          if (draftRef.current.length > 0) return;
+          event.preventDefault();
+          onDrop();
+        }}
       />
       <footer>
         <button type="button" className="is-danger" onClick={onDrop}>
@@ -179,7 +212,7 @@ function NoteCard({ item, onNote, onDrop, onClose }: NoteProps) {
         <button
           type="button"
           onClick={() => {
-            onNote(draft);
+            save();
             onClose();
           }}
         >

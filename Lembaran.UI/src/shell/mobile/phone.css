@@ -5,9 +5,62 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 2px 12px;
   border-bottom: 1px solid var(--lb-border);
   background: var(--lb-surface);
+}
+
+/* the header's own icon buttons: square, quiet, sized for a thumb */
+.lb-phone-actions {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  margin-left: -10px;
+}
+
+/* the theme switch and the reader's last control share the far end of the line */
+.lb-phone-actions-end {
+  flex: none;
+  margin: 0 -8px 0 0;
+}
+
+.lb-phone-actions-end .lb-icon-button {
+  width: var(--lb-tap);
+  height: var(--lb-tap);
+  min-width: var(--lb-tap);
+  min-height: var(--lb-tap);
+}
+
+.lb-phone-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--lb-tap);
+  height: var(--lb-tap);
+  min-width: var(--lb-tap);
+  min-height: var(--lb-tap);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--lb-text);
+  cursor: pointer;
+}
+
+.lb-phone-icon:hover:not(:disabled) {
+  border-color: var(--lb-border);
+  background: var(--lb-surface-2);
+}
+
+.lb-phone-icon:disabled {
+  opacity: 0.45;
+}
+
+.lb-phone-icon[aria-pressed='true'] {
+  border-color: var(--lb-accent);
+  color: var(--lb-accent);
 }
 
 .lb-phone-title {
@@ -21,6 +74,7 @@
 
 .lb-phone-meta {
   flex: none;
+  margin-left: auto;
   font-size: 11px;
   color: var(--lb-text-dim);
   font-variant-numeric: tabular-nums;

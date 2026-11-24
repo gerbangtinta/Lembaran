@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { readSource, type DocumentSource } from '@lembaran/framework';
 import { EmptyState, useFullscreen, useIsMobile } from '@lembaran/ui';
 import { decodeText, openFromDisk } from './feature/open';
-import { parseCsv } from './feature/grid';
+import { defaultDelimiter, parseCsv } from './feature/grid';
 import { CsvShell, type CsvShellProps } from './presentations/layout/CsvShell';
 import { CsvMobileShell } from './presentations/mobile/CsvMobileShell';
 import type { SelectedCell } from './presentations/layout/viewport/CsvGrid';
@@ -14,7 +14,7 @@ interface Props {
 export function CsvApp({ source = null }: Props) {
   const [current, setCurrent] = useState<DocumentSource | null>(source);
   const [text, setText] = useState('');
-  const [delimiter, setDelimiter] = useState('');
+  const [delimiter, setDelimiter] = useState(() => defaultDelimiter(source?.name ?? ''));
   const [selected, setSelected] = useState<SelectedCell | null>(null);
   const [opening, setOpening] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export function CsvApp({ source = null }: Props) {
     try {
       const opened = await openFromDisk();
       if (!opened) return;
-      setDelimiter('');
+      setDelimiter(defaultDelimiter(opened.name));
       setSelected(null);
       setCurrent({ kind: 'bytes', bytes: opened.bytes, name: opened.name, mime: opened.mime });
     } catch (reason) {

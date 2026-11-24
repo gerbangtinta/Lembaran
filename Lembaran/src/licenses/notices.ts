@@ -13,6 +13,7 @@ export const notices: NoticeEntry[] = [
   { name: 'dexie', version: '4.4.7', license: 'Apache-2.0', url: 'https://github.com/dexie/Dexie.js' },
   { name: 'docx-preview', version: '0.4.1', license: 'Apache-2.0', url: 'https://github.com/VolodymyrBaydalka/docxjs' },
   { name: 'papaparse', version: '5.7.1', license: 'MIT', url: 'https://github.com/mholt/PapaParse' },
+  { name: 'pdf-lib', version: '1.17.1', license: 'MIT', url: 'https://github.com/Hopding/pdf-lib' },
   { name: 'pdfjs-dist', version: '6.5.438', license: 'Apache-2.0', url: 'https://github.com/mozilla/pdf.js' },
   { name: 'react', version: '19.3.1', license: 'MIT', url: 'https://github.com/react/react' },
   { name: 'react-dom', version: '19.3.1', license: 'MIT', url: 'https://github.com/react/react' },

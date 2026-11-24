@@ -7,10 +7,11 @@ export const RAIL_CARD_WIDTH = 122;
 /** The width a reader should paint a thumbnail at: the card minus its 2 px padding. */
 export const RAIL_THUMB_WIDTH = RAIL_CARD_WIDTH - 4;
 
-export function SidePanel({ label, children }: { label: string; children: ReactNode }) {
+export function SidePanel({ label, footer, children }: { label: string; footer?: ReactNode; children: ReactNode }) {
   return (
     <nav className="lb-panel" aria-label={label} style={{ width: RAIL_WIDTH }}>
       {children}
+      {footer && <div className="lb-panel-foot">{footer}</div>}
     </nav>
   );
 }

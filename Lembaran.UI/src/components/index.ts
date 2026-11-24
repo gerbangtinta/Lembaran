@@ -1,4 +1,5 @@
 export { PropertiesPanel, type PropertiesPanelProps, type PropertyEntry, type PropertyGroup } from './properties/PropertiesPanel';
+export { Icon, type IconName } from './icons/Icon';
 export { RailThumb, type RailThumbProps, type ThumbPainter, type ThumbState } from './rail/RailThumb';
 export {
   PanelItem,

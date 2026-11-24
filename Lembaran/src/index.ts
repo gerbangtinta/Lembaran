@@ -14,6 +14,7 @@ export type {
 export { sha256Hex } from './files/hash';
 export {
   ensureReadPermission,
+  ensureWritePermission,
   extensionOf,
   hasFileSystemAccess,
   hasOpfs,
@@ -39,6 +40,7 @@ export {
   db,
   forget,
   listRecent,
+  recentByPath,
   remember,
   type BoundFolder,
   type RecentEntry,

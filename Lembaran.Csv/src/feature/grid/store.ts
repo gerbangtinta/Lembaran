@@ -17,6 +17,14 @@ export const DELIMITERS = [
   { value: '|', label: 'Pipe' },
 ] as const;
 
+/**
+ * A `.csv` is comma separated and a `.tsv` is tab separated — that is what the extensions mean, so neither
+ * starts on "Detect". Detection stays one choice away for the file that lies about itself.
+ */
+export function defaultDelimiter(name: string): string {
+  return /\.tsv$/i.test(name) ? '\t' : ',';
+}
+
 export function parseCsv(text: string, delimiter = ''): CsvTable {
   const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   const result = Papa.parse<string[]>(source, {

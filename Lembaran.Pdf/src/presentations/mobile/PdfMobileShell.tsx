@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Icon } from '../library/Icon';
+import { Icon, isFramed, ThemeToggle } from '@lembaran/ui';
 import { IconButton } from '../library/IconButton';
-import { PageBox } from '../ui/PdfToolbar';
+import { PageBox } from '../ui/PageSwitch';
 import { SearchPanel } from '../ui/SearchPanel';
 import { PdfViewport } from '../layout/viewport/PdfViewport';
 import type { ShellProps } from '../layout/PdfShell';
@@ -13,14 +13,19 @@ const COLORS = ['amber', 'green', 'blue', 'rose'] as const;
 export function PdfMobileShell(props: ShellProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const annotating = props.annotations.tool === 'highlight';
+  // inside the hub the framing bar already prints `‹ file name`; the header spends its width on the page
+  const framed = isFramed();
 
   return (
     <div className="pdf-shell pdf-shell-phone">
       <header className="pdf-phone-header">
-        <span className="pdf-title" title={props.title}>
-          {props.title}
-        </span>
-        <PageBox page={props.page} numPages={props.doc.numPages} onGoTo={props.onGoTo} />
+        {!framed && (
+          <span className="pdf-title" title={props.title}>
+            {props.title}
+          </span>
+        )}
+        <PageBox page={props.page} numPages={props.pages.length} onGoTo={props.onGoTo} />
+        <ThemeToggle />
         {props.fullscreen.supported && (
           <IconButton
             icon={props.fullscreen.active ? 'exitFullscreen' : 'fullscreen'}
@@ -65,6 +70,9 @@ export function PdfMobileShell(props: ShellProps) {
         doc={props.doc}
         scale={props.zoom}
         annotations={props.annotations}
+        pages={props.pages}
+        edit={props.edit}
+        searchQuery={props.search.query}
         onPageChange={props.onPageChange}
         onFitScale={props.onFitScale}
         apiRef={props.viewportApi}
@@ -108,7 +116,7 @@ export function PdfMobileShell(props: ShellProps) {
           type="button"
           className="pdf-phonebtn"
           onClick={() => props.onGoTo(props.page + 1)}
-          disabled={props.page >= props.doc.numPages}
+          disabled={props.page >= props.pages.length}
           aria-label="Next page"
         >
           <Icon name="next" size={20} />

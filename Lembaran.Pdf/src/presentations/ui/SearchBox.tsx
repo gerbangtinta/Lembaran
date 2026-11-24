@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import type { SearchState } from '../../feature/search';
 
 interface Props {
@@ -6,6 +7,14 @@ interface Props {
 }
 
 export function SearchBox({ search, onHit }: Props) {
+  const field = useRef<HTMLInputElement>(null);
+
+  // a find box opens with its last term selected, so the next word typed replaces it instead of extending it
+  useEffect(() => {
+    field.current?.focus();
+    field.current?.select();
+  }, []);
+
   return (
     <form
       className="pdf-search"
@@ -19,11 +28,11 @@ export function SearchBox({ search, onHit }: Props) {
       role="search"
     >
       <input
+        ref={field}
         type="search"
         value={search.query}
         placeholder="Find in document"
         aria-label="Find in document"
-        autoFocus
         onChange={(event) => search.setQuery(event.target.value)}
       />
       <button type="submit" disabled={search.busy || search.query.trim().length === 0}>

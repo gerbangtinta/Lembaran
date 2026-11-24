@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Icon, type IconName } from './Icon';
+import { Icon, type IconName } from '@lembaran/ui';
 
 interface Props {
   icon: IconName;

@@ -81,6 +81,46 @@
   font-weight: 600;
   color: var(--lb-text-dim);
   letter-spacing: 0.04em;
+  position: relative;
+}
+
+/* a border you can grab: the header's right edge and the gutter's bottom edge */
+.csv-grip {
+  position: absolute;
+  touch-action: none;
+}
+
+.csv-grip-col {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 9px;
+  cursor: col-resize;
+}
+
+.csv-grip-row {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 7px;
+  cursor: row-resize;
+}
+
+.csv-grip:hover {
+  background: color-mix(in srgb, var(--lb-accent) 45%, transparent);
+}
+
+/* while dragging, the cursor belongs to the whole grid, not just the 9 px strip */
+.csv-grid.is-col-resizing,
+.csv-grid.is-col-resizing * {
+  cursor: col-resize !important;
+  user-select: none;
+}
+
+.csv-grid.is-row-resizing,
+.csv-grid.is-row-resizing * {
+  cursor: row-resize !important;
+  user-select: none;
 }
 
 .csv-body {

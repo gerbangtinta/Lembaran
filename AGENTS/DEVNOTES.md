@@ -156,11 +156,30 @@ without either of them importing the other.
 
 ## The hub
 
-`Lembaran.App` is two layouts and one feature layer. `HubShell` (desktop) is a sticky bar — brand,
-search, bind folder, theme — over three sections in a fixed order (Folder, Readers, Recent);
+**PDF editing (0.2 of the reader).** The PDF reader writes now, and the shape of that is: an edit record in
+IndexedDB (`storage/edits.ts`, database `lembaran-pdf-edits`, tables `edits` + `blobs`) holds a **page plan**
+(order, per-page rotation, blank pages) and the **items** placed on pages (text, image, ink, highlight). The
+viewer draws `source pages + record` through a **display list** (`feature/edit/model.ts` → `displayPages`), so a
+deleted page is absent, a rotated page renders with pdf.js's own `rotation` argument, and a blank page is a
+`Surface` with no canvas. Saving (`feature/save/`) replays the record with **pdf-lib**: pages are copied in
+order, a rotated page becomes a new page of the swapped size with the old one drawn into it (so `/Rotate` is
+always 0 and normalised item boxes mean the same thing on every page), items are drawn in display coordinates,
+then the bytes go **over the file the user opened** through the `FileSystemFileHandle` the recents table kept
+(`recentByPath` + `ensureWritePermission`), falling back to `saveBytesAs` when there is no handle. Compression is
+two opt-in passes: a lossless structural rewrite, and an image pass that re-encodes JPEG XObjects only —
+**text is never rasterised**.
+
+`Lembaran.App` is two layouts and one feature layer. `HubShell` (desktop) is a fixed bar — brand,
+search, scale, theme — over three sections in a fixed order (Folder, Readers, Recent);
 `HubMobileShell` is brand + theme over three tabs with one section visible. They share only
 `presentations/props.ts` and `ReaderCard`; the folder panel is `layout/FolderLibrary.tsx` on desktop and
 `mobile/MobileFolderList.tsx` on a phone.
+
+**The desk shell is a window, not a page.** `.hub-shell` is `height: 100%; overflow: hidden`, the bar and the
+foot are `flex: none`, and `.hub-main` takes the remainder and scrolls — so the scroll region begins exactly at
+the bar's bottom edge and nothing ever slides underneath it (a sticky bar with a blurred backdrop let the
+content show through). `.hub-main` is full width so its scrollbar ends at the window's edge; the 1080 px
+reading column lives inside it in `.hub-main-inner`.
 
 A reader is framed, not re-skinned: `layout/HubShell` hands the document to `ReaderFrame`, whose bar is a
 **single 30 px line** — a `‹` back control and the document's file name. Everything else in that strip is the
@@ -173,8 +192,12 @@ re-lays the page at the new scale — the PDF canvas is re-rastered, so it stays
 puts the scale on `#root` as `zoom` with the viewport divided out (`width: calc(100vw / s); height:
 calc(100dvh / s)`), so the shell keeps filling the window instead of overflowing it. The app-scale preference
 is shared the way the theme is (localStorage + storage events), a frame embedded in the hub does **not**
-scale itself — its parent already does — and the hub bar only shows the percentage **once it is not 100%**, as
-a button that puts it back.
+scale itself — its parent already does. The percentage always sits at the end of a **desk** bar as a button
+that puts it back to 100%; the phone bar carries none, because a phone has no Ctrl + wheel and the value
+could only ever read 100%.
+
+The desk bar is brand, then a **search field that takes the rest of the width** (`flex: 1`, no cap), then the
+scale chip and the theme switch, so the bar has no dead gap between them.
 
 **Bound folder** (`feature/folder/store.ts` over `Lembaran/src/folders/`): `showDirectoryPicker` →
 `{ id: 'bound', name, handle, boundAt }` in Dexie → `listFolder` walks the tree once and offers only
@@ -218,6 +241,17 @@ remainder, the active section owns `height: 100%` and the folder pane hands its 
 exactly **one** scrollbar — the folder list's — filling the screen instead of stacking a page scrollbar next to
 an inner one. Every hub scroller (`.hub-shell`, `.hub-browse`, `.hub-browse-phone`, `.hub-main > section`) is
 `scrollbar-width: thin` with an 8 px transparent-track thumb, so the scrollbar reads as a hint, not a widget.
+**The scroller owns the right padding, not the shell**: `.hub-main` keeps only a left inset, so a section (or
+the folder list inside the pane, which drops the pane's right padding for the same reason) reaches the window's
+end and its bar is drawn there instead of floating inside the margin — with 14 px of padding as the gap between
+a card and its bar, plus 14 px under the last card, and `scrollbar-gutter: stable` so the cards do not jump when
+the bar appears. Measured at 390 × 560: scroller right edge `390`, bar `10 px`, card right edge `366`, gap under
+the last card `14`, on both the Readers and the Folder tab. A folder row carries its own padding —
+`10px 14px` on a 52 px row, with the 15 px folder icon and a 10 px gap to the name — so the button's edge and
+the card's edge are the same box instead of text sitting on the line. In the folder pane only the **list**
+reaches the window's end (`margin-right: -14px` cancels the pane inset and the list puts the gap back as its
+own padding), so the head keeps its 14 px inset and the action icons stop short of the border — measured head
+right `376`, last icon `376`, list right `390`, row chevron inset `14`.
 The phone keeps the **search box** the desk has (it filters readers and the bound folder) on the **same top row**
 as the wordmark, the version chip and the theme toggle — the chip drops to 9 px there so the row still fits at
 390 px, and the toggle is pushed to the end by `.hub-bar-actions`. The version string is not typed twice: Vite
@@ -301,8 +335,27 @@ live beside it, so a read-only reader can still take notes.
 - **CSV has its own grid, not a table library.** A data grid costs 200 KB+ and still needs a custom cell
   renderer for this; the virtualized window is 40 lines of arithmetic, tested in
   `feature/grid/viewport.test.ts`.
+- **A grid cell can be resized, and the shape is remembered per file.** `feature/grid/sizes.ts` holds one
+  `GridSizes` — a sparse `columns` map of dragged widths plus a single `rowHeight`, since a sheet is read as a
+  table, not as a pile of boxes — clamped to 64–520 px and 20–96 px. The header's right edge and the gutter's
+  bottom edge are 9 px `.csv-grip` spans (18 px wide / 14 px tall on a phone) that start a pointer drag on the
+  window, so the pointer may leave the grip; a double-click on one resets it. Widths feed `columnOffsets`, a
+  prefix sum, and the visible slice is a **binary search over those offsets** (`visibleSlice`), so an uneven
+  sheet virtualizes as cheaply as a uniform one. The store is `localStorage['lembaran.csv.sizes']` keyed by the
+  document's name, written 300 ms after the last change rather than once per pointer move.
 
 ## Traps
+
+- **A hook after an early return is a crash, not a warning.** Wiring the PDF save handler placed a `useCallback`
+  below `if (!current) return …`; React then rendered one more hook than the previous render and the whole reader
+  unmounted ("Rendered more hooks than during the previous render"). Every hook — including callbacks that only
+  the loaded state uses — belongs above the first conditional return.
+- **`Omit<Union, 'id'>` is not a union of omits.** `Omit` keeps only the keys every member shares, so
+  `Omit<EditItem, 'id'>` lost `points`, `blobId` and the box fields. The edit store exports `NewEditItem`, a
+  distributive omit (`T extends { id: string } ? Omit<T, 'id'> : never`), which is what the tools and the bake
+  signature take.
+- **pdf-lib cannot embed a page with no contents.** `embedPage` throws "Can't embed page with missing Contents";
+  the bake checks `page.node.Contents()` and writes an empty page of the right size instead.
 
 - `tsconfig.json` extends `../tsconfig.base.json` - one level, not two, since the projects moved out of
   `packages/` and `apps/`. If that path breaks, `tsc` stops reading `noEmit` and **emits `.js` files into
@@ -361,6 +414,12 @@ live beside it, so a read-only reader can still take notes.
   `Lembaran.UI/src/shell/mobile/`, imports its own `phone.css`, and shares only the neutral
   `Stage`/`Root`/`Body` classes with `shell/desktop/ReaderShell`. Copy markup instead of adding a
   `mobile` prop or a phone `@media` block to a desktop component; `App.tsx` is the only chooser.
+- **A framed reader does not print its own name.** The hub's strip already says `‹ file name` one line
+  above the frame, so `PhoneShell` asks `isFramed()` (`shell/frame.ts`, `window.top !== window.self`) and
+  drops the title when it is inside the hub; standing alone it still shows it. The header row then carries
+  `actions` — icon buttons, `lb-phone-icon`, 44 px — at its left, and always ends with the **theme switch**
+  plus an optional `end` control after it (PDF draws its own header and follows the same order by hand): on a
+  phone the hub's bar is not on screen while a document is open, so the reader has to offer the theme.
 - **The sheet canvas is sticky, not absolutely positioned.** The scroller carries a spacer the size of
   the sheet's extent and the canvas is `position: sticky; top: 0; left: 0`; scrolling only changes the
   offsets handed to `displayList`. Moving the canvas with a `translate(scrollTop)` fights the native

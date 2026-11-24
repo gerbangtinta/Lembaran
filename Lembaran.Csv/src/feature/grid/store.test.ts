@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseCsv } from './store';
+import { defaultDelimiter, parseCsv } from './store';
 
 describe('parseCsv', () => {
   it('detects the delimiter', () => {
@@ -26,5 +26,14 @@ describe('parseCsv', () => {
 
   it('honours an explicit delimiter', () => {
     expect(parseCsv('a|b\n1|2', '|').rows[1]).toEqual(['1', '2']);
+  });
+});
+
+describe('defaultDelimiter', () => {
+  it('trusts the extension: a csv is comma separated, a tsv is tab separated', () => {
+    expect(defaultDelimiter('cities.csv')).toBe(',');
+    expect(defaultDelimiter('CITIES.CSV')).toBe(',');
+    expect(defaultDelimiter('export.tsv')).toBe('\t');
+    expect(defaultDelimiter('pasted')).toBe(',');
   });
 });

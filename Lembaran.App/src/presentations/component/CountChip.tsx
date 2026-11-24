@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { folderCounts, type FolderFile } from '@lembaran/framework';
 import { READERS } from '../../feature/choose';
 
+/** A tile is a fixed 62 px square, so a name that does not fit one word of five needs a shorter word. */
+const SHORT_LABELS: Record<string, string> = { PowerPoint: 'Slides' };
+
 /** `pdf: 12` → `12 PDF`, using the reader that owns the extension. */
 function kinds(byExtension: Record<string, number>): Array<{ label: string; count: number }> {
   return Object.entries(byExtension)
     .map(([extension, count]) => {
       const reader = READERS.find((entry) => entry.extensions.includes(extension));
-      return { label: reader?.name ?? extension.toUpperCase(), count };
+      const name = reader?.name ?? extension.toUpperCase();
+      return { label: SHORT_LABELS[name] ?? name, count };
     })
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label));
 }

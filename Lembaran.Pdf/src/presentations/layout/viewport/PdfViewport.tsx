@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Surface } from '@lembaran/ui';
 import type { PDFDocumentProxy } from '../../../feature/open';
 import type { AnnotationsState } from '../../../feature/annotate';
+import { displayBox, type DisplayPage } from '../../../feature/edit';
 import { fitZoom } from '../../../feature/zoom';
 import { offsetForPage, PAGE_ASPECT, pageAtOffset } from '../../../feature/paginate';
-import { PageCanvas } from './PageCanvas';
+import { PageCanvas, type EditSurface } from './PageCanvas';
 
 export interface PdfViewportApi {
   goToPage(page: number): void;
   currentPage(): number;
   fitWidth(): void;
+  /** fit the width of the page to the height of the reader, for a document scanned sideways */
+  fitHeight(): void;
+  /** the page's own size in points, for a blank page that has to match the paper */
+  pageBox(display: number): { width: number; height: number } | null;
   /** recompute the opening fit, only while the reader is still at that fit */
   refit(): void;
 }
@@ -17,13 +23,19 @@ interface Props {
   doc: PDFDocumentProxy;
   scale: number;
   annotations: AnnotationsState;
+  /** the sequence to draw: source pages in order, with deletions, rotations and blanks already applied */
+  pages: readonly DisplayPage[];
+  /** the placed items and the tool that makes more of them */
+  edit: EditSurface;
+  /** the find term, marked on the page it is found on */
+  searchQuery?: string;
   onPageChange(page: number): void;
   onFitScale(scale: number): void;
   apiRef: { current: PdfViewportApi | null };
 }
 
 /** Continuous, virtualized page list. Only pages near the viewport are drawn. */
-export function PdfViewport({ doc, scale, annotations, onPageChange, onFitScale, apiRef }: Props) {
+export function PdfViewport({ doc, scale, annotations, pages, edit, searchQuery, onPageChange, onFitScale, apiRef }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const slots = useRef(new Map<number, HTMLDivElement>());
   const frame = useRef(0);
@@ -36,19 +48,43 @@ export function PdfViewport({ doc, scale, annotations, onPageChange, onFitScale,
    * blank, which is indistinguishable from a broken document.
    */
   const [anchor, setAnchor] = useState(1);
+  /** the paper of every source page, measured once: slots and blank pages both need it */
+  const [boxes, setBoxes] = useState<Record<number, { width: number; height: number }>>({});
 
-  const register = useCallback((pageNumber: number, element: HTMLDivElement | null) => {
-    if (element) slots.current.set(pageNumber, element);
-    else slots.current.delete(pageNumber);
+  useEffect(() => {
+    let cancelled = false;
+    const sources = [...new Set(pages.map((page) => page.source).filter((page): page is number => page !== null))];
+    void Promise.all(
+      sources.map(async (source) => {
+        const page = await doc.getPage(source).catch(() => null);
+        if (!page) return null;
+        const box = page.getViewport({ scale: 1, rotation: 0 });
+        page.cleanup();
+        return [source, { width: box.width, height: box.height }] as const;
+      }),
+    ).then((pairs) => {
+      if (cancelled) return;
+      const next: Record<number, { width: number; height: number }> = {};
+      for (const pair of pairs) if (pair) next[pair[0]] = pair[1];
+      setBoxes(next);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [doc, pages]);
+
+  const register = useCallback((display: number, element: HTMLDivElement | null) => {
+    if (element) slots.current.set(display, element);
+    else slots.current.delete(display);
   }, []);
 
   const collectOffsets = useCallback(() => {
     const offsets: number[] = [];
-    for (let page = 1; page <= doc.numPages; page += 1) {
-      offsets.push(slots.current.get(page)?.offsetTop ?? 0);
+    for (let display = 1; display <= pages.length; display += 1) {
+      offsets.push(slots.current.get(display)?.offsetTop ?? 0);
     }
     return offsets;
-  }, [doc.numPages]);
+  }, [pages.length]);
 
   const onScroll = useCallback(() => {
     if (frame.current !== 0) return;
@@ -110,6 +146,14 @@ export function PdfViewport({ doc, scale, annotations, onPageChange, onFitScale,
     };
   }, [doc, onFitScale]);
 
+  /** the paper a display position shows, once its source page has been measured */
+  const paperOf = useCallback(
+    (entry: DisplayPage | undefined) =>
+      entry ? displayBox(entry, entry.source !== null ? boxes[entry.source] : undefined) : null,
+    [boxes],
+  );
+  const firstPaper = useCallback(() => paperOf(pages[0]), [paperOf, pages]);
+
   useEffect(() => {
     apiRef.current = {
       goToPage: (page) => {
@@ -122,16 +166,28 @@ export function PdfViewport({ doc, scale, annotations, onPageChange, onFitScale,
       currentPage: () => pageAtOffset(collectOffsets(), scrollRef.current?.scrollTop ?? 0),
       fitWidth: () => {
         const element = scrollRef.current;
-        if (!element || pageWidth.current <= 0) return;
-        const fitted = fitZoom(element.clientWidth, pageWidth.current);
+        if (!element) return;
+        const width = firstPaper()?.width ?? pageWidth.current;
+        if (width <= 0) return;
+        const fitted = fitZoom(element.clientWidth, width);
         lastFit.current = fitted;
         onFitScale(fitted);
       },
+      fitHeight: () => {
+        const element = scrollRef.current;
+        const paper = firstPaper();
+        if (!element || !paper) return;
+        lastFit.current = null;
+        onFitScale(Math.min(1.5, (element.clientHeight - 28) / paper.height));
+      },
+      pageBox: (display) => paperOf(pages[display - 1]),
       refit: () => {
         const element = scrollRef.current;
-        if (!element || pageWidth.current <= 0) return;
+        if (!element) return;
         if (lastFit.current === null || Math.abs(scale - lastFit.current) > 0.001) return;
-        const fitted = Math.min(1, fitZoom(element.clientWidth, pageWidth.current));
+        const width = firstPaper()?.width ?? pageWidth.current;
+        if (width <= 0) return;
+        const fitted = Math.min(1, fitZoom(element.clientWidth, width));
         lastFit.current = fitted;
         onFitScale(fitted);
       },
@@ -139,23 +195,23 @@ export function PdfViewport({ doc, scale, annotations, onPageChange, onFitScale,
     return () => {
       apiRef.current = null;
     };
-  }, [apiRef, collectOffsets, onPageChange, onFitScale, scale]);
-
-  const pages: number[] = [];
-  for (let page = 1; page <= doc.numPages; page += 1) pages.push(page);
+  }, [apiRef, collectOffsets, firstPaper, onPageChange, onFitScale, pages, paperOf, scale]);
 
   return (
     <div className="pdf-viewport" ref={scrollRef} onScroll={onScroll} tabIndex={0}>
       <div className="pdf-pages">
         {pages.map((page) => (
           <PageSlot
-            key={page}
+            key={page.key}
             doc={doc}
-            pageNumber={page}
+            page={page}
             scale={scale}
             baseWidth={baseWidth}
+            box={page.source !== null ? boxes[page.source] : undefined}
             annotations={annotations}
-            active={page <= 2 || Math.abs(page - anchor) <= 1}
+            edit={edit}
+            searchQuery={searchQuery}
+            active={page.display <= 2 || Math.abs(page.display + 1 - anchor) <= 1}
             onRegister={register}
           />
         ))}
@@ -166,36 +222,77 @@ export function PdfViewport({ doc, scale, annotations, onPageChange, onFitScale,
 
 interface SlotProps {
   doc: PDFDocumentProxy;
-  pageNumber: number;
+  page: DisplayPage;
   scale: number;
   baseWidth: number;
+  /** the page's own paper, in points, once measured */
+  box?: { width: number; height: number };
   annotations: AnnotationsState;
+  edit: EditSurface;
+  searchQuery?: string;
   /** painted, because it is at or near the page the reader is on */
   active: boolean;
-  onRegister(pageNumber: number, element: HTMLDivElement | null): void;
+  onRegister(display: number, element: HTMLDivElement | null): void;
 }
 
-function PageSlot({ doc, pageNumber, scale, baseWidth, annotations, active, onRegister }: SlotProps) {
+function PageSlot({
+  doc,
+  page,
+  scale,
+  baseWidth,
+  box,
+  annotations,
+  edit,
+  searchQuery,
+  active,
+  onRegister,
+}: SlotProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const display = page.display + 1;
+  // a blank page carries its own size; a source page's paper turns with it, so a quarter turn is landscape
+  const paper = displayBox(page, box);
+  const aspect = paper ? paper.height / paper.width : PAGE_ASPECT;
+  const width = paper ? paper.width * scale : (baseWidth || 640) * scale;
 
   useEffect(() => {
     const element = ref.current;
-    onRegister(pageNumber, element);
-    return () => onRegister(pageNumber, null);
-  }, [pageNumber, onRegister]);
+    onRegister(display, element);
+    return () => onRegister(display, null);
+  }, [display, onRegister]);
 
-  // the page's own width, not a guess: the slot must not add phantom space
-  const width = (baseWidth || 640) * scale;
+  if (page.source === null) {
+    return (
+      <div
+        className="pdf-slot"
+        ref={ref}
+        style={{ width, height: width * aspect }}
+        data-page={display}
+        data-blank="true"
+      >
+        <Surface className="pdf-page pdf-page-blank" aspect={1 / aspect}>
+          <span className="pdf-visually-hidden">Blank page {display}</span>
+        </Surface>
+      </div>
+    );
+  }
 
   return (
     <div
       className="pdf-slot"
       ref={ref}
-      style={active ? { width } : { width, height: width * PAGE_ASPECT }}
-      data-page={pageNumber}
+      style={active ? { width } : { width, height: width * aspect }}
+      data-page={display}
     >
       {active ? (
-        <PageCanvas doc={doc} pageNumber={pageNumber} scale={scale} annotations={annotations} />
+        <PageCanvas
+          doc={doc}
+          pageNumber={page.source}
+          scale={scale}
+          rotation={page.rotation}
+          annotations={annotations}
+          edit={edit}
+          searchQuery={searchQuery}
+        />
       ) : null}
     </div>
   );
