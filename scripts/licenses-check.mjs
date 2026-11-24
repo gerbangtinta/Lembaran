@@ -58,6 +58,18 @@ function idsIn(expression) {
 const failures = [];
 const dependencies = declaredDependencies();
 
+// the project's own license needs its text too, and it is the one license the dependency loop never sees
+const own = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8').replace(/^\uFEFF/, ''));
+if (typeof own.license !== 'string' || own.license.length === 0) {
+  failures.push('package.json: the project declares no license');
+} else {
+  for (const id of idsIn(own.license)) {
+    if (!existsSync(join(LICENSES_DIR, `${id}.txt`))) {
+      failures.push(`Lembaran itself: LICENSES/${id}.txt is missing (declared ${own.license})`);
+    }
+  }
+}
+
 for (const name of dependencies) {
   if (!FRAMEWORK.includes(`\`${name}\``)) {
     failures.push(`${name}: no row in AGENTS/FRAMEWORK.md`);

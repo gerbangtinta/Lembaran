@@ -4,10 +4,43 @@ What moved, by date, newest first. Files, tests, gates and numbers live here; th
 is in [CHANGELOG.md](CHANGELOG.md). Never rewrite an older day — append, and reverse a decision with a
 `Reverted:` line that keeps its reason.
 
-Current version: `0.1.0`, named 2026-11-24. Nothing is built yet; this file starts with the decisions
+Current version: `0.1.0-alpha`, named 2026-11-24. Nothing is built yet; this file starts with the decisions
 that were made instead of code.
 
 ## 2026-11-24
+
+- **The version is `0.1.0-alpha`** (release metadata). Every manifest (root + 7 workspaces) carries the
+  prerelease id, `package-lock.json` was resynced from them, and `npm run notices` regenerated
+  `ownLicense.version` from the manifest rather than a literal. The heading the user reads
+  (`AGENTS/CHANGELOG.md`), the plan table and its milestone heading, `FRAMEWORK.md`'s own row and the
+  skill's "last named version" line all say `0.1.0-alpha`. No code or dependency changed.
+  Files: `package.json`, `Lembaran*/package.json`, `package-lock.json`,
+  `Lembaran/src/licenses/notices.ts`, `AGENTS/{CHANGELOG,CHANGELOG-DEV,FRAMEWORK,PLAN}.md`,
+  `AGENTS/skills/lembaran/SKILL.md`.
+
+- **The whole repository is now `GPL-3.0-only`** (license). `LICENSE` was Apache-2.0; it is the verbatim
+  GNU GPL version 3, 29 June 2007 (35,149 bytes, fetched from gnu.org — never retyped), with a copy in
+  `LICENSES/GPL-3.0-only.txt`. Root and all seven workspace manifests declare the id, `package-lock.json`
+  was resynced from them, and `NOTICE` now carries the GPL notice plus the Corresponding Source
+  statement a static build owes. Every dependency stays permissive — MIT (`react`, `papaparse`),
+  Apache-2.0 (`pdfjs-dist`, `dexie`, `comlink`, `docx-preview`, `@betteroffice/*`), OFL-1.1 for future
+  font assets — so no dependency was relicensed and no text changed in `LICENSES/*.txt` except the
+  addition. `scripts/gen-notices.mjs` no longer hardcodes the app license: it reads `license`,
+  `version` and a `repository`/`homepage` URL from `package.json`, so `ownLicense` and the notice header
+  cannot drift. Both files regenerate byte-identically on a second `npm run notices`. `npm run
+  licenses:check` now also fails when the project's own license has no text in `LICENSES/` (it checked
+  only dependencies before). `npm run build` copies `LICENSE`, `NOTICE` and `THIRD-PARTY-NOTICES.md`
+  into `dist/` as `LICENSE.txt`, `NOTICE.txt` and `THIRD-PARTY-NOTICES.txt` and fails if a copy is
+  missing — the served bundle is the object code the license is about. The decision and its obligations
+  are in `docs/adr/0001-adopt-copyleft-license.md`; the rule is stated in `AGENTS.md` rule 7, the
+  lembaran and license-compliance skills, and `.github/copilot-instructions.md`. Follow-up, tracked in
+  `AGENTS/PLAN.md`: publish the repository and add `repository` to `package.json` so the source offer
+  prints a URL.
+  Files: `LICENSE`, `LICENSES/GPL-3.0-only.txt`, `NOTICE`, `THIRD-PARTY-NOTICES.md`, `package.json`,
+  `Lembaran*/package.json`, `package-lock.json`, `scripts/{build-all,gen-notices,licenses-check}.mjs`,
+  `Lembaran/src/licenses/notices.ts`, `docs/adr/0001-adopt-copyleft-license.md`,
+  `AGENTS/{FRAMEWORK,PLAN,DEVNOTES,CHANGELOG,CHANGELOG-DEV}.md`, `AGENTS/skills/*/SKILL.md`,
+  `AGENTS.md`, `.github/copilot-instructions.md`.
 
 - **A phone layout now has its own files, starting with the frame** (architecture). `ReaderShell.tsx` held
   the desktop frame and `PhoneShell` in one module, and `shell.css` carried every `.lb-phone-*` rule

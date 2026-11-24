@@ -7,17 +7,17 @@ record, with its checked boxes and its struck-through audit trail intact.
 
 | Version | State | Sections |
 | --- | --- | --- |
-| `0.1.0` — 2026-11-24 | open | A · B · C · D1–D5 (read-only readers, in order) |
+| `0.1.0-alpha` — 2026-11-24 | open | A · B · C · D1–D5 (read-only readers, in order) |
 
 A version closes when its boxes are ticked; a new one opens only when the user names it, and the
 heading date is the day it was named. Order matters where noted. **One format at a time**: a chunk is
 finished, tested and green before the next begins.
 
-**Out of scope for `0.1.0`, and not to be re-litigated mid-milestone:** any editing or saving,
+**Out of scope for `0.1.0-alpha`, and not to be re-litigated mid-milestone:** any editing or saving,
 annotations, sync, accounts, OCR, encrypted PDFs, forms, and every native shell (Tauri, Electron,
 Capacitor). This is a read-only web reader.
 
-# 0.1.0 — open, named 2026-11-24
+# 0.1.0-alpha — open, named 2026-11-24
 
 Product rule: **a document is read locally, in the browser, with nothing leaving the machine.** The
 shell composes, the worker parses, the engine paints.
@@ -31,9 +31,12 @@ any reader exists.
       reader, Sanggar-style, each with its own `package.json`.
 - [x] `AGENTS/` scaffold, root `AGENTS.md`, `.github/copilot-instructions.md`; three skills under
       `AGENTS/skills/` (`lembaran`, `license-compliance`, `planning-annotations`).
-- [x] `LICENSES/*.txt`, `NOTICE`, `LICENSE` (Apache-2.0), `AGENTS/FRAMEWORK.md`, generated
-      `THIRD-PARTY-NOTICES.md`.
-- [ ] In-app attribution dialog, generated from the same manifest.
+- [x] `LICENSES/*.txt`, `NOTICE`, `LICENSE` (GPL-3.0-only for the app; dependencies stay permissive),
+      `AGENTS/FRAMEWORK.md`, generated `THIRD-PARTY-NOTICES.md`, and `LICENSE.txt`/`NOTICE.txt`/
+      `THIRD-PARTY-NOTICES.txt` copied into `dist/` by the build so the served site carries them.
+- [ ] In-app attribution dialog, generated from the same manifest, including the source offer.
+- [ ] Publish the repository and put its URL in `package.json` `repository`, so the generated notices
+      carry the Corresponding Source link the GPL requires.
 - [x] `npm run licenses:check` fails on an unrecorded dependency, a missing license text, or a
       GPL/AGPL addition with no ADR. `npm run large-files:check` fails on a stale `LARGEFILES.md`.
 - [ ] CI: typecheck, test, licenses, large-files, build, and the hub-bundle adapter assertion. (Run by hand on 2026-11-24; not yet a workflow.)

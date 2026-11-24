@@ -73,11 +73,15 @@ commit. First-load budgets are enforced in CI against the build report.
 
 ## Licenses: record, place, disclose
 
+- **Lembaran itself is `GPL-3.0-only`.** Every dependency is permissive (MIT, Apache-2.0, BSD, ISC,
+  OFL for fonts), which GPLv3 permits; their notices and texts are retained and never absorbed. Because
+  a build is served as JavaScript and WASM, the distributed build owes its Corresponding Source — the
+  public repository it came from, printed in `THIRD-PARTY-NOTICES.md` from `package.json.repository`.
 - Permissive (MIT, BSD, Apache-2.0): keep the notice, add a row to `FRAMEWORK.md` and a section to
   `THIRD-PARTY-NOTICES.md`.
 - Weak copyleft (MPL-2.0, LGPL): as above, plus record which files were modified.
-- Strong copyleft (GPL, AGPL): requires an ADR **before** merging, plus whole-work disclosure. The AGPL
-  network clause reaches anything served from the origin.
+- Strong copyleft (GPL, AGPL) **added as a dependency**: requires an ADR **before** merging, plus
+  whole-work disclosure. The AGPL network clause reaches anything served from the origin.
 - No binary-only dependency, whatever its npm `license` field says. `pptx-preview` was rejected for
   exactly this.
 - Anything whose license requires a text to accompany the artifact gets that text copied next to the

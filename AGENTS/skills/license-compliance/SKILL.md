@@ -6,7 +6,7 @@ description: >
   LICENSES/; deciding whether a license is acceptable; placing an OFL font or a copyleft notice where
   it is actually served; answering "what license is this and what do we owe". DO NOT USE FOR: naming
   the project's own license, or a dependency change that alters no code and no version.
-license: Apache-2.0
+license: GPL-3.0-only
 ---
 
 # License compliance
@@ -38,7 +38,7 @@ artifact is served**, and anything it obliges us to say is **said**. A license t
 
 | Location | What lives there |
 | --- | --- |
-| `LICENSE` | our own license (Apache-2.0) |
+| `LICENSE` | our own license (**GPL-3.0-only**; the dependencies are permissive) |
 | `NOTICE` | attribution we are required to propagate |
 | `LICENSES/<SPDX>.txt` | verbatim full text of every license in the dependency tree |
 | `AGENTS/FRAMEWORK.md` | the register: engine, version, license, measured size, why chosen |
@@ -51,6 +51,10 @@ Copy the **full text**, never a link, and never a summary. The served artifact i
 
 ## Rules that are not negotiable
 
+- **Our own license is `GPL-3.0-only`, and a served build owes its Corresponding Source.** The
+  repository is that source; `THIRD-PARTY-NOTICES.md` and `NOTICE` state it and print the URL once
+  `package.json` names one. Removing that offer from a public build is a license violation, not a
+  cleanup.
 - No dependency without a `FRAMEWORK.md` row and a notices section. `npm run licenses:check` enforces it.
 - No AGPL/GPL addition without an ADR that says so plainly and names what gets disclosed.
 - No binary-only or minified-only dependency.

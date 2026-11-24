@@ -1,12 +1,25 @@
 Lembaran
 Copyright 2026 Lembaran contributors
 
-This product is licensed under the Apache License, Version 2.0. See LICENSE.
+This program is free software: you can redistribute it and/or modify it under the terms of the
+GNU General Public License as published by the Free Software Foundation, version 3.
 
-This product includes software developed by third parties. The full text of every
-license in use is in the LICENSES/ directory, the attribution lines are in
-THIRD-PARTY-NOTICES.md, and each dependency's version, license and measured payload
-are recorded in AGENTS/FRAMEWORK.md.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. The full
+text is in LICENSE and LICENSES/GPL-3.0-only.txt; if not, see https://www.gnu.org/licenses/gpl-3.0.txt.
+
+Corresponding Source: because Lembaran ships as a static build of JavaScript and WASM, the complete
+source of this build is the project repository it was produced from, published publicly and without
+charge. `npm run build` in that repository reproduces this build.
+
+This product includes software developed by third parties, each under its own license. The full text
+of every license in use is in the LICENSES/ directory, the attribution lines are in
+THIRD-PARTY-NOTICES.md, and each dependency's version, license and measured payload are recorded in
+AGENTS/FRAMEWORK.md. Nothing in the tree is copyleft except Lembaran itself; every dependency is
+permissive (MIT, Apache-2.0, BSD-2-Clause, ISC, OFL-1.1), which GPL-3.0-only permits.
 
 Notably:
 

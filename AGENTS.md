@@ -56,7 +56,9 @@ estimated. A change that grows a first load must say by how much.
 
 **7. License integrity is not optional.** Every dependency is recorded, every license text is in
 `LICENSES/`, and anything requiring disclosure has it placed where it is actually served. No
-binary-only dependency, ever.
+binary-only dependency, ever. **The app itself is `GPL-3.0-only`** while every dependency stays
+permissive; a build served to users must state where its source is (see
+[`docs/adr/0001-adopt-copyleft-license.md`](docs/adr/0001-adopt-copyleft-license.md)).
 
 **8. A phone is its own files.** A mobile view gets its own `.tsx`/`.ts` **and** its own stylesheet —
 never a mobile variant, a mobile branch or a phone `@media` block inside a desktop file. `App.tsx` is

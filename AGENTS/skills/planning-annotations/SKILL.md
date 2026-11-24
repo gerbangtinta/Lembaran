@@ -5,7 +5,7 @@ description: >
   AGENTS/PLAN.md milestones, a feature plan, a spike, or any proposal that introduces a framework,
   library, engine or build tool. DO NOT USE FOR: a plan with no new dependency and no new library —
   a bug fix inside one file still needs the confirm-and-wait rule, but not this table.
-license: Apache-2.0
+license: GPL-3.0-only
 ---
 
 # Planning annotations

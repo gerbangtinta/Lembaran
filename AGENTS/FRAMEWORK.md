@@ -4,7 +4,7 @@ Every framework and engine Lembaran depends on, with the license that binds it a
 
 | Component | Framework / Engine | Version | License | Shipped size (raw → gzip) | Why this one |
 |---|---|---|---|---|---|
-| Lembaran itself | — | 0.1.0 | Apache-2.0 | — | Patent grant; compatible with every dependency below |
+| Lembaran itself | — | 0.1.0-alpha | **GPL-3.0-only** | — | Strong copyleft chosen for the app (see `docs/adr/0001-adopt-copyleft-license.md`); every dependency below is permissive, so the combination is permitted and their notices are retained |
 | Shell / UI | `react` + `react-dom` | 19.3.1 | MIT | 0.62 MB → 0.11 MB | No UI kit, ~100-line router; the only library hub and readers share |
 | Worker RPC | `comlink` | 4.4.2 | Apache-2.0 | 5 KB → 2 KB | Typed main↔worker messaging; keeps every engine off the UI thread |
 | Handle store | `dexie` | 4.4.7 | Apache-2.0 | 94 KB → 30 KB | Persists `FileSystemFileHandle` across reloads (the Lakaran pattern) |
@@ -25,4 +25,4 @@ Every framework and engine Lembaran depends on, with the license that binds it a
 
 **Totals:** a single reader ships **0.10–2.50 MB gzip** (PDF 0.23 + a 0.37 worker, CSV 0.11, DOCX 0.15, PPTX 2.50 including its 2.34 MB WASM; XLSX is not built). The installed tree carries **8 third-party dependencies**; every one has a row here, a license text in `LICENSES/`, and an entry in `THIRD-PARTY-NOTICES.md` generated from what is installed.
 
-**Rejected, for the record:** LibreOffice→WASM (GPL-3.0/LGPLv3/MPL-2.0 — 300 MB+, dead browser ports), ONLYOFFICE `sdkjs` (AGPL-3.0 — network clause reaches the whole work), Collabora Online (MPL-2.0 — server architecture), `pptx-preview` (ISC on npm but **minified-only, non-open source**), `hyperformula` (GPL-3.0-only), MuPDF (AGPL-3.0). None buy measurable speed in a browser, where runtime is dominated by download and compile rather than source language.
+**Rejected, for the record:** LibreOffice→WASM (GPL-3.0/LGPLv3/MPL-2.0 — 300 MB+, dead browser ports), ONLYOFFICE `sdkjs` (AGPL-3.0 — network clause reaches the whole work), Collabora Online (MPL-2.0 — server architecture), `pptx-preview` (ISC on npm but **minified-only, non-open source**), `hyperformula` (GPL-3.0-only — the license objection lapsed when the app itself became GPL-3.0-only, but it is still unbudgeted and `@betteroffice/xlsx` covers formulas), MuPDF (AGPL-3.0 — stricter than GPLv3 and would re-license the served work). None buy measurable speed in a browser, where runtime is dominated by download and compile rather than source language.

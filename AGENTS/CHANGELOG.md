@@ -3,7 +3,7 @@
 What the app can do, by version, in plain terms. The code-level record is
 [CHANGELOG-DEV.md](CHANGELOG-DEV.md).
 
-# 0.1.0 — in progress
+# 0.1.0-alpha — in progress
 
 Three readers work: **PDF**, **CSV** and **Word**.
 
@@ -29,6 +29,11 @@ Open, separator and full screen within thumb reach.
 
 Nothing is uploaded, no file is modified, and the file is remembered so it opens again from the recent
 list. Excel is listed in the hub marked "coming next".
+
+Lembaran is free software under the GNU General Public License v3: anyone may study it, change it and
+share it, and a changed version must stay free in the same way. The libraries it is built on keep their
+own permissive licenses (MIT, Apache-2.0), and their notices ship with the app. The full license is in
+`LICENSE`, and the source of any published build is its public repository.
 
 Planned for this version:
 

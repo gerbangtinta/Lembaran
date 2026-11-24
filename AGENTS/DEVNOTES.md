@@ -116,6 +116,14 @@ live beside it, so a read-only reader can still take notes.
   (`Surface`), the top bar, the status line, the inspector — while each format still paints its own
   document and keeps its own controls. The rail is geometry and timing, not a slide strip: the reader
   supplies the pixels, so PowerPoint's engine never enters the GUI package.
+- **The app is GPL-3.0-only; the dependencies are not.** The project itself is strong copyleft
+  (`docs/adr/0001-adopt-copyleft-license.md`), which Apache-2.0 and MIT components permit as a one-way
+  move; each of them keeps its own license and notices. Because the shipped artifact is JavaScript and
+  WASM, a public build owes its Corresponding Source: `NOTICE`, `THIRD-PARTY-NOTICES.md` and the
+  generated `ownLicense` say so, and the generator prints `package.json.repository` once the repository
+  is public. `npm run licenses:check` now also requires the project's own license text in `LICENSES/`,
+  and `npm run build` copies `LICENSE`, `NOTICE` and `THIRD-PARTY-NOTICES.md` into `dist/` as `.txt`
+  files — the built site is the object code, so the license travels with it, not only beside the source.
 - **A 4 MB DOCX engine when a 20 KB one exists.** Resolved: `docx-preview` is what ships. The gate showed
   `@betteroffice/docx` hides layout in its editing module, so a read-only reader would have carried the
   weight of an editor. Fidelity of *pages, styles, tables and footnotes* was enough; the editor's extra

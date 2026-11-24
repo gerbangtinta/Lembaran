@@ -17,4 +17,4 @@ export const notices: NoticeEntry[] = [
   { name: 'react-dom', version: '19.3.1', license: 'MIT', url: 'https://github.com/react/react' },
 ];
 
-export const ownLicense = { name: 'Lembaran', version: '0.1.0', license: 'Apache-2.0' };
+export const ownLicense = { name: 'Lembaran', version: '0.1.0-alpha', license: 'GPL-3.0-only', source: null };

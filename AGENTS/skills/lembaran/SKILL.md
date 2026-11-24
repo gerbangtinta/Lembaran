@@ -9,7 +9,7 @@ description: >
   the service worker, weight or performance work, a license record, a milestone, a changelog entry,
   or a dev-notes refresh. DO NOT USE FOR: unrelated TypeScript, or a change that cannot affect what a
   reader shows or how it loads.
-license: Apache-2.0
+license: GPL-3.0-only
 ---
 
 # Lembaran
@@ -39,7 +39,7 @@ amendment.
 **2. Two changelogs, both every feature.** `AGENTS/CHANGELOG.md` records what shipped **by version**,
 in the user's terms. `AGENTS/CHANGELOG-DEV.md` records what changed **by date**, in the code's terms,
 with the files touched and the numbers that prove it. Append to both in the same turn as the change.
-The version heading is the last one the user named — `0.1.0` today; never invent a number.
+The version heading is the last one the user named — `0.1.0-alpha` today; never invent a number.
 
 **3. Dev notes stay current.** `AGENTS/DEVNOTES.md` is what an agent reads before touching the app.
 Update the sections the change touched, in the same edit. When the user says **summarize**, they mean
@@ -73,7 +73,9 @@ in the changelog bullet.
 **9. License integrity.** Every dependency gets a `FRAMEWORK.md` row and a
 `THIRD-PARTY-NOTICES.md` section. Every license text used lives in `LICENSES/`. Anything requiring
 disclosure gets its text copied to where it is actually served — beside the font files for a bundled
-OFL font, not into `node_modules`. AGPL/GPL needs an ADR first. No binary-only dependency.
+OFL font, not into `node_modules`. AGPL/GPL needs an ADR first. No binary-only dependency. **The app
+itself is `GPL-3.0-only`** (`docs/adr/0001-adopt-copyleft-license.md`): the dependencies stay under
+their permissive licenses, and a served build must offer its Corresponding Source.
 
 **10. The hub never imports a reader.** Dev and production both reach a reader through an iframe at its
 own URL — one Vite server at the repo root in development, `/pdf/` in production. Nothing in

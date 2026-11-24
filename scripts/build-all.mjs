@@ -3,7 +3,7 @@
 //   2. each `Lembaran.<Format>` that declares `lembaran.slug` builds into `dist/<slug>/`
 // Adding a reader needs no edit here: declare the metadata and it is included.
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -56,6 +56,19 @@ for (const reader of readers) {
   execSync(`npm run build -w ${reader.pkg.name}`, { cwd: ROOT, stdio: 'inherit' });
   expect(join(slug, 'index.html'), reader.folder);
 }
+
+// The built site is the object code the GPL is about, so the license and the notices are served with
+// it, beside the JS — not only kept in the repository.
+const served = [
+  ['LICENSE', 'LICENSE.txt'],
+  ['NOTICE', 'NOTICE.txt'],
+  ['THIRD-PARTY-NOTICES.md', 'THIRD-PARTY-NOTICES.txt'],
+];
+for (const [from, to] of served) {
+  copyFileSync(join(ROOT, from), join(DIST, to));
+  expect(to, from);
+}
+console.log('\n  license + notices copied to dist/ (LICENSE.txt, NOTICE.txt, THIRD-PARTY-NOTICES.txt)');
 
 console.log(`\nSite assembled in dist/ in ${Math.round((Date.now() - started) / 100) / 10}s:`);
 console.log('  /            the hub');
