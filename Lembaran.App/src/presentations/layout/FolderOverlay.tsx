@@ -11,6 +11,8 @@ interface Props {
   onNavigate(path: string): void;
   onOpen(entry: FolderFile): void;
   onClose(): void;
+  /** a drive panel brings its own walking and paging, so it replaces the tree views instead of feeding them */
+  drive?: React.ReactNode;
 }
 
 type Mode = 'folders' | 'all';
@@ -21,7 +23,7 @@ type Mode = 'folders' | 'all';
  * that reaches the whole tree either way. Escape, the close button and the backdrop all leave; the panel
  * takes focus so a keyboard user lands inside it.
  */
-export function FolderOverlay({ title, files, path, onNavigate, onOpen, onClose }: Props) {
+export function FolderOverlay({ title, files, path, onNavigate, onOpen, onClose, drive }: Props) {
   const panel = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<Mode>('folders');
   const [query, setQuery] = useState('');
@@ -38,6 +40,7 @@ export function FolderOverlay({ title, files, path, onNavigate, onOpen, onClose 
 
   const wanted = query.trim().toLowerCase();
   const flat = wanted.length === 0 ? files : files.filter((file) => file.path.toLowerCase().includes(wanted));
+  const onDrive = drive !== undefined;
 
   return (
     <div
@@ -60,43 +63,49 @@ export function FolderOverlay({ title, files, path, onNavigate, onOpen, onClose 
             <h2 className="lb-label">Folder</h2>
             <span className="hub-overlay-title">{title}</span>
           </div>
-          <label className="hub-search-overlay">
-            <SearchIcon />
-            <input
-              className="lb-field"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search this folder"
-              aria-label="Search this folder"
-            />
-          </label>
-          <div className="hub-overlay-modes" role="tablist" aria-label="How to browse">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'folders'}
-              className={mode === 'folders' ? 'hub-mode is-on' : 'hub-mode'}
-              onClick={() => setMode('folders')}
-            >
-              Folders
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'all'}
-              className={mode === 'all' ? 'hub-mode is-on' : 'hub-mode'}
-              onClick={() => setMode('all')}
-            >
-              All files
-            </button>
-          </div>
+          {!onDrive && (
+            <label className="hub-search-overlay">
+              <SearchIcon />
+              <input
+                className="lb-field"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search this folder"
+                aria-label="Search this folder"
+              />
+            </label>
+          )}
+          {!onDrive && (
+            <div className="hub-overlay-modes" role="tablist" aria-label="How to browse">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'folders'}
+                className={mode === 'folders' ? 'hub-mode is-on' : 'hub-mode'}
+                onClick={() => setMode('folders')}
+              >
+                Folders
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={mode === 'all'}
+                className={mode === 'all' ? 'hub-mode is-on' : 'hub-mode'}
+                onClick={() => setMode('all')}
+              >
+                All files
+              </button>
+            </div>
+          )}
           <button type="button" className="lb-ghost" onClick={onClose}>
             Close
           </button>
         </header>
         <div className="hub-overlay-body">
-          {mode === 'folders' ? (
+          {drive !== undefined ? (
+            drive
+          ) : mode === 'folders' ? (
             <FolderBrowser
               files={files}
               path={path}

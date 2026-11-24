@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react';
 import { folderView, type FolderFile } from '@lembaran/framework';
 import type { BoundFolderApi } from '../../feature/folder';
 import { useFolderPath } from '../../feature/folder';
+import { folderSource, SOURCE_LABEL } from '../sources';
+import { AccountMenu } from '../component/AccountMenu';
 import { CountChip } from '../component/CountChip';
+import { DrivePickerDialog } from '../component/DrivePickerDialog';
 import { ExpandIcon, SwapFolderIcon, UnlinkIcon } from '../component/icons';
+import { Loading } from '../component/Loading';
+import { OneDriveSetup } from '../component/OneDriveSetup';
+import { DriveFolder } from './DriveFolder';
 import { FolderBrowser } from './FolderBrowser';
 import { FolderOverlay } from './FolderOverlay';
 
@@ -16,96 +22,189 @@ interface Props {
 
 /**
  * The bound folder in the page: icon actions, a breadcrumb, then one level of files in a box that scrolls
- * after ten rows. Expand opens the same browser over 90% of the window, with a flat "All files" mode
- * beside it. The count chip explains itself on hover: how many folders, and how many of each kind.
+ * after ten rows. The folder can be a directory on this device or one inside OneDrive; the rows are the same,
+ * and only the way in differs. Expand opens the local browser over 90% of the window, with a flat "All files"
+ * mode beside it — a drive is walked one level at a time instead, because it has no cheap recursive listing.
  */
 export function FolderLibrary({ folder, query, onOpen }: Props) {
-  const { state, folder: bound, canBind } = folder;
+  const { state, folder: bound, canBind, driveFolder, account, driveView, cloudReady } = folder;
   const files = folder.files;
   const [confirmingForget, setConfirmingForget] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  /** "Change folder" asks where the new folder lives before it opens any picker */
+  const [pickingSource, setPickingSource] = useState(false);
+  /** a build with no client id is not a dead end: the id can be entered here */
+  const [setupOpen, setSetupOpen] = useState(false);
 
   // a different folder, or a listing that no longer holds the open folder, starts at the top
-  const rootKey = `${bound?.name ?? ''}:${files.length}`;
+  const rootKey = `${bound?.name ?? driveFolder?.name ?? ''}:${files.length}`;
   const { path, navigate } = useFolderPath(rootKey);
   useEffect(() => {
     setExpanded(false);
   }, [rootKey]);
 
-  if (state === 'loading') {
-    return <p className="hub-note">Reading the folder…</p>;
+  if (state === 'loading' || state === 'drive-signing-in' || (state === 'drive-browsing' && driveView === null)) {
+    return state === 'loading' ? (
+      <Loading title="Reading the folder" hint="Listing what it holds — subfolders included." />
+    ) : state === 'drive-browsing' ? (
+      <Loading title="Opening your drives" hint="Asking Microsoft which drives this account can see." />
+    ) : (
+      <Loading
+        title="Signing in to OneDrive"
+        hint="Talking to Microsoft. If a sign-in page opens, finish there and this window carries on by itself."
+        onCancel={() => folder.cancelSignIn()}
+      />
+    );
   }
 
-  if (state === 'needs-permission') {
+  // a drive folder is remembered, but the account behind it is not: one click restores both
+  if (state === 'drive-signed-out' || state === 'drive-expired') {
     return (
       <div className="hub-invite">
         <div>
-          <h3>{bound ? `Reconnect ${bound.name}` : 'Reconnect the folder'}</h3>
+          <h3>{state === 'drive-expired' ? 'Sign in to OneDrive again' : 'Connect OneDrive'}</h3>
           <p>
-            The browser asked again after the restart. One click restores the listing — nothing was
-            uploaded, moved or changed.
+            {driveFolder
+              ? `“${driveFolder.name}” is still bound. Signing in again restores the listing — nothing was uploaded or moved.`
+              : 'Sign in to list a folder in OneDrive and open what is inside it.'}
           </p>
         </div>
         <div className="hub-invite-actions">
-          <button type="button" className="lb-primary" onClick={() => void folder.reconnect()}>
-            Reconnect
+          <button type="button" className="lb-primary" onClick={() => void folder.signIn()}>
+            Sign in
           </button>
-          <button type="button" className="lb-ghost" onClick={() => void folder.bind()}>
-            Pick another
+          {driveFolder && (
+            <button type="button" className="lb-ghost" onClick={() => void folder.release()}>
+              Forget the drive
+            </button>
+          )}
+          {/* the escape hatch for a self-hoster: this build ships a registration, but theirs can replace it */}
+          <button type="button" className="lb-ghost" onClick={() => setSetupOpen(true)}>
+            Use my own app registration
           </button>
         </div>
       </div>
     );
   }
 
-  if (state === 'empty' || (state === 'transient' && files.length === 0)) {
+  if (state === 'empty' || pickingSource || (state === 'transient' && files.length === 0)) {
+    const boundSomething = bound !== null || driveFolder !== null;
     return (
-      <div className="hub-invite">
-        <div>
-          <h3>Bind a folder</h3>
-          <p>
-            {canBind
-              ? 'Pick a folder once. Lembaran remembers it, lists every readable file inside — subfolders too — and opens them from here, next session as well.'
-              : 'This browser cannot keep a folder between visits, so a picked folder is listed until you reload.'}
-          </p>
+      <>
+        <div className="hub-invite">
+          <div>
+            <h3>
+              {boundSomething
+                ? canBind
+                  ? 'Choose another folder'
+                  : 'Upload another folder'
+                : canBind
+                  ? 'Bind a folder'
+                  : 'Upload a folder'}
+            </h3>
+            <p>
+              {canBind
+                ? 'A folder on this device, or one inside OneDrive. Lembaran remembers it, lists every readable file inside, and opens them from here next session as well.'
+                : 'This browser cannot keep a folder between visits, so a picked folder is listed until you reload.'}
+            </p>
+          </div>
+          <div className="hub-invite-actions">
+            <button
+              type="button"
+              className="lb-primary"
+              onClick={() => {
+                setPickingSource(false);
+                void folder.bind();
+              }}
+            >
+              {canBind ? 'This device' : 'Upload a folder'}
+            </button>
+            <button
+              type="button"
+              className="lb-ghost"
+              onClick={() => {
+                if (!cloudReady) {
+                  setSetupOpen(true);
+                  return;
+                }
+                setPickingSource(false);
+                void folder.chooseDrive();
+              }}
+              title={
+                cloudReady
+                  ? 'Choose a folder inside OneDrive'
+                  : 'OneDrive needs an app registration first — this asks for it'
+              }
+            >
+              {cloudReady ? 'OneDrive' : 'Set up OneDrive'}
+            </button>
+            {boundSomething && (
+              <button type="button" className="lb-ghost" onClick={() => setPickingSource(false)}>
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
-        <button type="button" className="lb-primary" onClick={() => void folder.bind()}>
-          {canBind ? 'Choose folder' : 'Pick a folder'}
-        </button>
-      </div>
+
+        {setupOpen && (
+          <OneDriveSetup
+            onClose={() => setSetupOpen(false)}
+            onReady={() => {
+              setSetupOpen(false);
+              void folder.chooseDrive();
+            }}
+          />
+        )}
+      </>
     );
   }
 
-  const title = bound?.name ?? 'Picked folder';
+  const onDrive = driveView !== null;
+  /** a drive folder is being chosen, so the drive list belongs in its own window with a Cancel */
+  const picking = driveView !== null && driveView.choosing;
+  /** the heading names where the folder comes from; the breadcrumb underneath says which folder it is */
+  const heading = SOURCE_LABEL[folderSource(folder.source)];
+  const folderName = (onDrive ? driveFolder?.name ?? driveView?.driveName : bound?.name) ?? heading;
   const here = folderView(files, path);
 
   return (
     <>
       <div className="hub-folder-head">
-        <span className="hub-folder-name">{title}</span>
+        <span className="hub-folder-name">
+          {onDrive && driveView?.choosing ? 'Choose a folder' : heading}
+        </span>
         <CountChip files={files} />
+        {onDrive && (
+          <AccountMenu
+            account={account}
+            onAddAccount={() => void folder.addAccount()}
+            onRemoveAccount={() => void folder.signOut()}
+          />
+        )}
         {state === 'transient' && <span className="hub-flag">not remembered after a reload</span>}
 
         <div className="hub-folder-actions">
+          {(bound || driveFolder) && (
+            <button
+              type="button"
+              className="hub-icon-btn"
+              onClick={() => setExpanded(true)}
+              title="Expand"
+              aria-label="Expand the folder into a larger window"
+            >
+              <ExpandIcon />
+            </button>
+          )}
           <button
             type="button"
             className="hub-icon-btn"
-            onClick={() => setExpanded(true)}
-            title="Expand"
-            aria-label="Expand the folder into a larger window"
-          >
-            <ExpandIcon />
-          </button>
-          <button
-            type="button"
-            className="hub-icon-btn"
-            onClick={() => void folder.bind()}
-            title="Change folder"
-            aria-label="Change folder"
+            onClick={() => (onDrive ? void folder.chooseDrive() : setPickingSource(true))}
+            title={onDrive ? 'Choose another drive folder' : 'Change folder'}
+            aria-label={onDrive ? 'Choose another drive folder' : 'Change folder'}
           >
             <SwapFolderIcon />
           </button>
-          {bound &&
+          {(bound || driveFolder) &&
             (confirmingForget ? (
               <span className="hub-confirm" role="group" aria-label="Forget this folder?">
                 <span>Forget it?</span>
@@ -119,11 +218,7 @@ export function FolderLibrary({ folder, query, onOpen }: Props) {
                 >
                   Forget
                 </button>
-                <button
-                  type="button"
-                  className="lb-ghost"
-                  onClick={() => setConfirmingForget(false)}
-                >
+                <button type="button" className="lb-ghost" onClick={() => setConfirmingForget(false)}>
                   Cancel
                 </button>
               </span>
@@ -141,16 +236,24 @@ export function FolderLibrary({ folder, query, onOpen }: Props) {
         </div>
       </div>
 
-      <FolderBrowser
-        files={files}
-        path={path}
-        rootName={title}
-        query={query}
-        onNavigate={navigate}
-        onOpen={onOpen}
-      />
+      {onDrive ? (
+        picking ? (
+          <p className="hub-note">Choosing a folder in OneDrive…</p>
+        ) : (
+          <DriveFolder folder={folder} onOpen={onOpen} />
+        )
+      ) : (
+        <FolderBrowser
+          files={files}
+          path={path}
+          rootName={folderName}
+          query={query}
+          onNavigate={navigate}
+          onOpen={onOpen}
+        />
+      )}
 
-      {here.files.length + here.folders.length > 0 && (
+      {!onDrive && here.files.length + here.folders.length > 0 && (
         <p className="hub-note hub-note-tight">
           {here.folders.length > 0 &&
             `${here.folders.length} folder${here.folders.length === 1 ? '' : 's'} · `}
@@ -158,14 +261,27 @@ export function FolderLibrary({ folder, query, onOpen }: Props) {
         </p>
       )}
 
-      {expanded && (
+      {expanded && (bound || driveFolder) && (
         <FolderOverlay
-          title={title}
+          title={folderName}
           files={files}
           path={path}
           onNavigate={navigate}
           onOpen={onOpen}
           onClose={() => setExpanded(false)}
+          drive={onDrive ? <DriveFolder folder={folder} onOpen={onOpen} /> : undefined}
+        />
+      )}
+
+      {picking && <DrivePickerDialog folder={folder} onOpen={onOpen} />}
+
+      {setupOpen && (
+        <OneDriveSetup
+          onClose={() => setSetupOpen(false)}
+          onReady={() => {
+            setSetupOpen(false);
+            void folder.chooseDrive();
+          }}
         />
       )}
     </>

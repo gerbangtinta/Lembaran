@@ -4,14 +4,12 @@ import { Icon, ThemeToggle } from '@lembaran/ui';
 import { IconButton } from '../library/IconButton';
 import { MenuButton, MenuItem } from './Menu';
 import { PageMenu } from './PageMenu';
-import { PageSwitch } from './PageSwitch';
 import type { EditTool } from '../layout/viewport/EditLayer';
 
 const COLORS: AnnotationColor[] = ['amber', 'green', 'blue', 'rose'];
 
 export interface ToolbarProps {
   page: number;
-  numPages: number;
   zoom: number;
   tool: AnnotateTool;
   color: AnnotationColor;
@@ -43,7 +41,6 @@ export interface ToolbarProps {
   onRotate(delta: 90 | -90): void;
   onDeletePage(): void;
   onInsertBlank(): void;
-  onGoTo(page: number): void;
   onZoomIn(): void;
   onZoomOut(): void;
   onFit(): void;
@@ -106,8 +103,7 @@ export function PdfToolbar(props: ToolbarProps) {
         />
       </div>
 
-      {/* the rail carries the page switch under its thumbnails; the bar keeps it only when there is no rail */}
-      {!props.railOpen && <PageSwitch page={props.page} numPages={props.numPages} onGoTo={props.onGoTo} />}
+      {/* the page switch lives under the thumbnails and nowhere else: the status bar still names the page */}
 
       <div className="pdf-seg" aria-label="Zoom">
         <IconButton icon="zoomOut" label="Zoom out" onClick={props.onZoomOut} />

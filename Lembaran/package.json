@@ -9,6 +9,7 @@
     "./adapter": "./src/adapter/types.ts"
   },
   "dependencies": {
+    "@azure/msal-browser": "5.30.0",
     "comlink": "^4.4.2",
     "dexie": "^4.4.7"
   },

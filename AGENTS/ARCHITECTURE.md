@@ -139,12 +139,14 @@ a phone needs no such dialog because the folder already owns a whole tab. The
 palette comes from `Lembaran.UI/src/theme/tokens.css`: pastel green ground, a darker green for actions, clay
 for marks, and one deliberate white, `--lb-paper`, which is the sheet a document is drawn on.
 
-## Cloud drives (planned, not built)
+## Cloud drives (OneDrive built; Google Drive not started)
 
-Named by the user on 2026-11-24 for a later version: read a document straight out of a **OneDrive** or
-**Google Drive** account, keep it in step with the copy in the drive while it is open, and — once a
-format can edit — save back to where it came from. Nothing below exists yet; it is recorded so the
-seam is not designed wrong first.
+Named by the user on 2026-11-24, and **built for OneDrive** on 2026-11-25: a folder inside the account is bound
+from the hub, its files open like any other, and the PDF reader saves the edits straight back into the drive.
+Google Drive is deliberately out of scope — there is no provider registry to fill in and no dormant code for it;
+`Lembaran/src/cloud/onedrive.ts` is a plain module, so a second drive would be a sibling file rather than a
+refactor. The rest of this section is the design that was agreed *before* any of it was written, kept because it
+is what the code follows.
 
 **The rule survives, the promise gets a caveat.** Lembaran still runs no server of its own: the only
 endpoints a connected drive adds are the provider's own API origin. So the honest sentence becomes
@@ -185,15 +187,27 @@ interface CloudProvider {
   `handles/` and `opfs/`; the connect/pick UI belongs to the hub (`Lembaran.App/src/feature/…`); no
   reader imports a provider and no reader gains a "Cloud" button.
 
-**Open decisions, deliberately unanswered** — these are questions for the version that builds it, not
-for this page to guess:
+**Open decisions, answered when OneDrive was built:**
 
-| Question | Options on the table |
+| Question | Answer |
 | --- | --- |
-| Where the integrated file manager lives | a Lembaran-owned library (one recent list across local and both drives, staleness markers) **or** the provider's own picker iframed, with no local library of its own |
-| Where a save lands | in place in the drive, with `etag` conflict handling pointed back into the provider's web UI **or** a local OPFS copy plus an explicit upload step |
-| What "synced" means while open | a live re-read when the remote changes, **or** a badge that a newer remote copy exists and a Reload action |
-| Offline | keep the cached OPFS copy readable and mark it stale, **or** refuse to open a cloud document offline at all |
+| Where the integrated file manager lives | **ours, in the hub.** One folder is bound at a time — a directory handle or a drive folder — and the drive is walked one level at a time (`DriveBrowser`-style rows) because a drive has no cheap recursive listing |
+| Where a save lands | **in place in the drive**, with the eTag of the version that was opened sent as `If-Match`. A `412` is a conflict the user resolves: *Replace it* (read the current eTag, then write) or *Open theirs* (fetch, re-ingest, discard this window's edits). The drive's API has **no partial write**, so a save always sends the whole file: the reader therefore skips a save with nothing changed, fingerprints the baked bytes so an identical bake never leaves the device twice, and offers Compress for anything large. A PDF's own incremental-update trick cannot be used, because the transport would still need the entire object |
+| What "synced" means while open | **nothing yet.** v1 checks the eTag on save; a `/delta` poll can come later without changing the seam |
+| Offline | the OPFS copy keeps opening; a save fails with "sign in to OneDrive again" rather than writing anywhere else |
+| Where the client id comes from | **the build ships one, and anything else overrides it.** `config.ts` carries `d7eca84d-…` so a visitor can connect a drive without registering an Entra app; `VITE_MS_CLIENT_ID` or an id typed into the hub (reachable from the sign-in card's *Use my own app registration*) wins over it. A client id is public — a single-page app has no secret to protect. One registration serves every user of the app; only the host registers anything. What actually protects the app is **not** the id: it is the exact-match redirect-URI allow-list (tokens only ever go to an address registered there), each user's own consent, MSAL's PKCE (S256) on the code, and delegated scopes that can only touch the signed-in person's files. The value that must never ship is a *client secret* — this app never creates one and Entra must not have one for it |
+| Which tenant | `common` by default, so personal and work accounts both arrive. A registration limited to one organisation is unreachable through `common` (`unauthorized_client … not enabled for consumers`), so the hub takes a tenant beside the id (`rememberTenant` → `cloudTenant()`), and `VITE_MS_TENANT` pins one for a build |
+| How long a sign-in lasts | the account, tokens and bound folder live in `localStorage`, so a reload, a new tab or a browser restart costs nothing. Microsoft's lifetimes then apply: **access token ≈ 1 hour**, renewed silently from the refresh token; **refresh token = 24 hours for a `spa` redirect URI**, fixed and not extendable. After 24 h one interactive step is required — a **top-level redirect** that normally returns without asking anything because the Microsoft cookie is reused. `loginPopup` is not used: its response page is a second copy of this app, which cannot read the interaction state MSAL keeps in the opener's `sessionStorage`, so the opener waits and the popup never closes (seen in Chromium). `loginRedirect` has no such seam; the page reloads, `handleRedirectPromise` takes the code, and `lembaran.onedrive.resuming` reopens the folder panel it was heading for. Switching accounts is done by signing out, which clears the cookie |
+
+**What was built, file by file** — `Lembaran/src/cloud/`: `types.ts` (the refs, the entries, the five error
+kinds), `config.ts` (the client id, tenant and redirect, primed by each app's entry because a workspace package
+does not keep `import.meta.env`, plus the id a user types into the hub and keeps on the device), `oauth.ts` (the
+only file that imports `@azure/msal-browser`, dynamically),
+`onedrive.ts` (Graph: drives, paged listings, read, `If-Match` write, chunked upload sessions), `graph.ts` (the
+pure mapping, paging and status rules), `entries.ts` (drive rows as `FolderFile`s, with `cloud` instead of
+`handle`), `store.ts` (Dexie: the account and the bound drive folder), and `fake.ts`/`fakeGate.ts` (a development
+drive behind `?drive=fake`, dropped from a build). The hub's `useBoundFolder` owns both sources; the reader only
+learned one thing — `writePdf` writes back through the drive reference the recent record carries.
 
 ## Worker boundary
 

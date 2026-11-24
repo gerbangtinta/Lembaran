@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { ThemeToggle, useAppScale } from '@lembaran/ui';
 import type { HubShellProps } from '../props';
 import { ReaderCard } from '../component/ReaderCard';
+import { ClearRecents } from '../component/ClearRecents';
+import { recentSource, SOURCE_LABEL } from '../sources';
 import { FolderLibrary } from './FolderLibrary';
 
 /** The hub on a wide screen: one bar to act from, then folder, readers and recents in that order. */
@@ -14,6 +16,7 @@ export function HubShell({
   onLaunch,
   onOpenRecent,
   onRemoveRecent,
+  onClearRecents,
   onOpenFolderFile,
   onDismissError,
 }: HubShellProps) {
@@ -129,6 +132,7 @@ export function HubShell({
             <header className="hub-section-head">
               <h2 className="lb-label">Recent</h2>
               <span className="hub-count">{recents.length}</span>
+              {recents.length > 0 && <ClearRecents onClear={onClearRecents} />}
             </header>
             {recents.length === 0 ? (
               <p className="hub-note">Nothing opened yet. Drop a file anywhere on this window.</p>
@@ -139,6 +143,7 @@ export function HubShell({
                     <button type="button" className="hub-recent" onClick={() => onOpenRecent(recent)}>
                       <span className="hub-recent-name">{recent.name}</span>
                       <span className="hub-recent-when">
+                        {SOURCE_LABEL[recentSource(recent)]} ·{' '}
                         {new Date(recent.openedAt).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',

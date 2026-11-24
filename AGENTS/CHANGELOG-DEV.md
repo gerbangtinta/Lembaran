@@ -9,6 +9,180 @@ that were made instead of code.
 
 ## 2026-11-25
 
+- **"Upload a folder" where there is no File System Access** (copy). Firefox and iOS get `<input webkitdirectory>`, which
+  is an upload-style pick, not a bindable handle — the card now says so: **Upload a folder** (heading and button) with
+  *Choose another folder* → *Upload another folder* when one is already listed, while Chromium keeps **Bind a folder** /
+  **This device**. The phone's folder tab follows the same two words. Verified in Chromium with
+  `showDirectoryPicker` deleted at boot: heading and button read *Upload a folder*, OneDrive beside it; in the
+  untouched browser the card still reads *Bind a folder · This device*.
+- **A wait that looks like a wait, and Cancel beside Use** (UX). Connecting a drive fetches an 80 kB sign-in library,
+  leaves for Microsoft and comes back, so the folder section could sit on a bare sentence long enough to read as
+  "nothing happened". `Loading.tsx` is now a real panel — spinner (`hub-spin`, 0.72 s, halved for
+  `prefers-reduced-motion`), `role="status"` + `aria-live="polite"`, a bold line and a hint — used for all three
+  waits: *Reading the folder*, *Signing in to OneDrive* (with Cancel), and *Opening your drives*, which used to fall
+  through to the stale card while `/me/drive` was answering. In the picker, Cancel moved out of the left edge and sits
+  in a `.hub-picker-actions` group with **Use this folder** at the right; the account switch, when it is shown at the
+  drive list, is the only thing on the left. Verified: the boot wait renders the panel with the animation running;
+  with the MSAL chunk delayed, *Signing in to OneDrive* + Cancel is what the section shows; and in the picker Cancel
+  (x=655) and Use (x=743) are adjacent at both the root and inside a drive.
+- **The build ships a registration, so nobody has to create an Entra app** (decision made by the owner). `config.ts`
+  now carries `SHIPPED_CLIENT_ID = d7eca84d-3ce5-4cbc-b018-cc567a88adc8`, and `cloudClientId()` is *build env → typed in
+  the hub → shipped*. That makes `cloudConfigured()` true out of the box, so the folder card offers **OneDrive**
+  instead of *Set up OneDrive*; the setup dialog stays reachable from the sign-in card as **Use my own app
+  registration**, which is the self-hoster's escape hatch (their redirect URI would not be on this registration).
+  Verified in Chromium with nothing stored: card reads `This device | OneDrive`, and clicking it navigates to
+  `login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=d7eca84d-3ce5-4cbc-b018-cc567a88adc8
+  &redirect_uri=http%3A%2F%2Flocalhost%3A5173%2F&response_type=code&code_challenge_method=S256`. **The registration
+  must list every origin the app is served from** — `http://localhost:5173/` and `https://lembaran.pages.dev/` —
+  because the allow-list, not the id's secrecy, is what keeps tokens where they belong. **Tests:** `config.test.ts`
+  rewritten for the new precedence (37 framework tests).
+- **A source label, and a way to reclaim what Lembaran stored** (feature + data hygiene). The folder heading now names
+  where the folder comes from — **Local** or **OneDrive** (`presentations/sources.ts`, with `Google Drive` waiting for a
+  provider registry) — while the breadcrumb underneath keeps the folder's own name, so "Engineering" is not repeated
+  twice. Recent rows carry the same vocabulary: `OneDrive`, `Local` (a file with a handle) or **OPFS** (bytes that
+  exist only in the copy Lembaran keeps in browser storage). Unbinding still deletes nothing but its own record — the
+  folder on disk is untouched, and the OPFS copies stay so Recent can still open them — but a recent can now be
+  cleared properly: `forget(id)` removes its OPFS copy, and a **Clear** button on the Recent section (desktop and
+  phone, two-step like *Forget*) calls `clearRecent()` → `clearSources()`, emptying `lembaran/sources` with it.
+  `removeSource` also stopped throwing when the file was already gone. Verified in Chromium against the fake drive:
+  heading `OneDrive` with crumbs `OneDrive / OneDrive (sample)`; opening `hello.pdf` and returning showed
+  `hello.pdf · OneDrive · Nov 25` and a **Clear** button beside the count.
+- **The drive folder expands, and the account menu lost its button** (fix). The *Expand* icon was gated on `!onDrive`,
+  so a OneDrive folder could not be opened in the big window at all; it is now shown whenever a folder is bound, and
+  `FolderOverlay` takes an optional `drive` node that replaces its tree views — the drive panel brings its own
+  breadcrumb, paging and walking, so the overlay's search field and Folders/All-files tabs are simply not rendered
+  (they would have been inert; `hidden` alone did nothing, since the class rules set `display`). The `⋯` next to the
+  account chip is gone: the chip itself answers a right-click (and Shift+F10) with the two account actions, with
+  `cursor: context-menu` as the hint. Verified against the fake drive: header now reads `1 files · OneDrive · you@…
+  · Expand · Choose another · Unbind` with no `⋯`; Expand opens a 1014×760 window titled `OneDrive (sample)` with the
+  drive breadcrumb, `Reports` and `hello.pdf`, header holding only Close.
+- **A save with nothing changed is skipped, and the bytes now say so** (perf/bytes). Writing always replaces the whole
+  file — Graph has no partial update — so every Save used to bake and (on a drive) upload the identical file again.
+  `saveNow` now returns early when `edits.dirty` is false ("Nothing to save — no changes since the file was last
+  written."), and remembers a **SHA-256 of the last written bytes** (`digestOf`, first 12 bytes as hex) so an edit that
+  bakes back to the same file ("Already saved — the edits came back to the same file.") also costs nothing; on an
+  insecure origin without SubtleCrypto the digest is empty and the write happens as before. The Save dialog, for files
+  of 4 MB or more, now says plainly that a save writes the whole file and offers **Compress first**, which reuses the
+  Compress window. Verified through the hub's fake drive with `hello.pdf`: Save with no edits → dialog closes with that
+  notice and nothing is written; rotate a page → Save → "Saved over the original: 2 KB" and the status bar echoes it.
+- **The page switch lives only under the thumbnails now** (fix). With the rail closed, the bar still showed `‹ 1 of 19 ›`,
+  which read as a second, competing control — the rail already carries it in its footer. `PdfToolbar` no longer renders
+  `PageSwitch` at all (and lost the `numPages`/`onGoTo` props it only existed for); the rail footer is the one place,
+  the mobile shell keeps `PageBox`, and the status bar still names the page. Reopening the rail is the toolbar's
+  own *Show pages* button. `PageSwitch` is now referenced only by `ThumbnailRail` (verified by grep across the reader).
+- **Only the drives a person actually uses are listed, and the account can be swapped** (fix + feature). A personal
+  account's `/me/drives` answers with a pile of auxiliary "personal" drives — GUID-named ones, `Bundles_…`,
+  `ODCMetadataArchive` — and the picker was showing all of them as if they were the person's OneDrive. `listDrives`
+  now reads `/me/drive` for the default drive and adds only non-`personal` drives from `/me/drives` (document
+  libraries and work drives), via the pure `primaryDrives()` rule (**3 tests**: the noise dropped, libraries kept
+  default-first and deduped, a failed `/me/drive` still answering). The account line in the folder header grew
+  **Add account** and **Remove**: removing calls the existing `signOut` (clears the session, the bound folder and the
+  Microsoft cookie); adding calls `cloudSignIn({ chooseAccount: true })`, which is the same redirect with
+  `prompt=select_account`, and releases the folder that belonged to the previous account — one account and one folder
+  at a time, which is the whole model. The picker's footer carries the same switch as a button — *Sign in with
+  another account* on the left, Cancel and **Use this folder** on the right — so switching never means closing the
+  picker first. Verified against the fake drive: bound header shows `OneDrive · test.account@example.com` with both
+  buttons; **Remove** returns the card with no chip; the footer's switch closes the picker and drops the account
+  cleanly.
+- **Choosing a OneDrive folder happens in its own window** (UX). Binding is a decision, but it used to look like the
+  folder was already bound: the drive panel replaced the card in place, and the only way out was the icon that also
+  means "unbind". `DrivePickerDialog.tsx` now puts the same panel in a modal — *"Choose the folder to bind"*, the
+  drive list and breadcrumb, **Use this folder** where it was, and **Cancel** in the header (plus Escape and a click
+  outside). `cancelDrivePicker()` closes it and reopens the bound folder if there was one; the card behind says
+  *"Choosing a folder in OneDrive…"* so the two surfaces cannot disagree. The phone's folder tab uses the same
+  dialog. Verified in Chromium against the fake drive: picker 792×302 labelled "Choose a OneDrive folder" with both
+  sample drives; drive → folder → **Use this folder** closes it and shows the bound header with `Reports` and
+  `hello.pdf`; reopening and **Cancel** closes it and restores the bound folder; the reload before that still had the
+  binding and the `OneDrive · test.account@example.com` chip, so the persisted state and the panel agree.
+- **Sign-in leaves the page and comes back, instead of opening a popup** (fix, found in Chromium). The popup never
+  closed: the response lands on `redirectUri`, which is *this app*, and a second copy of an SPA cannot read the
+  interaction state MSAL keeps in the opener's `sessionStorage` — so the opener waited on a popup that waited on the
+  opener, until the 120 s watchdog said "timed out". `cloudSignIn` now calls `loginRedirect` (the flow Microsoft
+  documents for SPAs, and the top-level frame its own refresh-token note asks for). Supporting that: `redirect.ts` +
+  `signInResponseFrom` (pure, 3 tests) recognises a response URL without loading the library;
+  `lembaran.onedrive.resuming` in `sessionStorage` survives the round trip and makes the folder store reopen the
+  chooser it was heading for; `handleRedirectPromise` is reached on boot whenever a response is present (not only
+  when a drive folder already exists) or the first sign-in would have been thrown away; a spent or failed response
+  is stripped from the address bar (`settleSignInUrl`) so a reload cannot replay it; and `authMessage` now names
+  `timed_out`/network and `access_denied` in plain words. Verified in Chromium: clicking OneDrive leaves the page for
+  `login.microsoftonline.com/common/oauth2/v2.0/authorize?…client_id=…&redirect_uri=http%3A%2F%2Flocalhost%3A5173%
+  2F…&response_type=code&code_challenge_method=S256`, i.e. a top-level navigation with PKCE; a bogus
+  `/#code=…&state=…` returns to a working hub, the flag consumed and the URL cleaned to `/`, with no stuck
+  "Signing in…" and no banner.
+- **The sign-in is silent unless it truly cannot be** (fix). `cloudSignIn` passed `prompt: 'select_account'`, which
+  forces Microsoft's account chooser on every interaction — the opposite of "stay signed in". It is gone: the popup
+  now reuses the Microsoft session cookie and closes by itself, and switching accounts is done by signing out
+  (which clears it). The lifetimes are now written down where the next reader will look (`ARCHITECTURE.md`,
+  `LIMITATION.md`): access token ≈ 1 h renewed silently from the refresh token, refresh token **24 h for a `spa`
+  redirect URI** and not extendable by activity — Microsoft's rule, since a SPA cannot rely on third-party cookies
+  for a hidden frame. So a reload, a new tab or a browser restart costs nothing for a day; after a day there is one
+  interactive step that normally needs no typing.
+- **Hosting it for others is a static build with one inlined value** (docs/ops). `VITE_MS_CLIENT_ID` is
+  build-time: `npm run build` inlines it as a string literal into `dist/assets/*.js` — proven by building with a
+  marker and finding `clientId:\`deadbeef-…\`` in the hub's chunk *and* the PDF reader's — so a static host needs
+  no server, no runtime env and no `.env` on the host. `.github/workflows/build.yml` now passes
+  `VITE_MS_CLIENT_ID`/`VITE_MS_TENANT` from repository **variables** to `npm run gates` (unset ⇒ each visitor is
+  offered *Set up OneDrive*, exactly as before). The setup dialog stops hard-coding `http://localhost:5173/`: it
+  prints the address MSAL will really return to (`cloudConfig().redirectUri`, i.e. this deployment's URL) and, on a
+  hosted copy, says that the id typed there applies to this browser only while the maintainer can set it once for
+  everyone. `DEVNOTES.md § Deploy` gained the recipe; `.env.example` says the values are inlined.
+- **The tenant is asked for beside the id** (feature, same round). `unauthorized_client … not enabled for
+  consumers` is what `common` gets from a registration that excludes personal accounts, and the only way round it
+  used to be `VITE_MS_TENANT` and a rebuild. The setup dialog now has a **Tenant (optional)** field
+  (`rememberTenant`, `lembaran.onedrive.tenant`), `cloudTenant()` = typed tenant → build tenant → `common`, and the
+  MSAL instance is keyed on `id|authority` so changing either rebuilds it. `authMessage` translates the two errors
+  people actually hit instead of relaying Microsoft's text: *not enabled for consumers* → say to set the Manifest
+  `signInAudience` to `AzureADandPersonalMicrosoftAccount` or enter the tenant, and `AADSTS9002326` → the redirect
+  URI belongs under **Single-page application**, not *Web*. The dialog's own copy answers the question the error
+  raises: **one registration serves everyone who uses a copy of the app** — each person signs in to it with their
+  own account, and only the host has to register anything. Verified: both values land in `localStorage`; a
+  Build-id-vs-typed-id and tenant precedence suite (**5 tests**, `config.test.ts`).
+- **The client id can be typed into the hub** (feature, the missing piece of the round below). A build that
+  shipped without `VITE_MS_CLIENT_ID` used to show a dead disabled "OneDrive" chip — and since `.env.local` was
+  never created and no app registration existed, that is exactly what the first real run hit. The folder card now
+  reads **Set up OneDrive** when nothing is configured: it opens `OneDriveSetup.tsx`, which lists the five
+  registration steps (new app registration, **Single-page application** platform, the `http://localhost:5173/`
+  redirect in development plus the https one, delegated `Files.ReadWrite` + `User.Read`, copy the *application
+  (client) id*), takes the id, and stores it with `rememberClientId` under `lembaran.onedrive.clientId` in
+  `localStorage` — then goes straight on to sign in. `cloudClientId()` is now *build id, else stored id*, and
+  `cloudConfigured()` keeps the fake drive working. The phone's folder tab got the same two buttons; it also
+  learned the drive states it never rendered (`drive-signing-in`, `drive-signed-out`, `drive-expired`) and shows
+  the panel itself when a drive is open. **Bug found while testing:** `loginPopup` settles only when its window
+  closes, so a popup that the browser blocked or that a user left open froze the section on "Signing in to
+  OneDrive…" forever — the wait is now bounded (`SIGN_IN_LIMIT` 120 s) and a **Cancel** button rejects it at once,
+  landing on "Sign-in was cancelled." with the card back. Verified in Chromium: no id → `This device | Set up
+  OneDrive`; dialog 616×542 with the id box 546 px wide and no vertical overflow; Save disabled until an id is
+  typed; the id lands in `localStorage`, the dialog closes, the card flips to `OneDrive`; a reload keeps it; Cancel
+  during a hung popup returns the card with the message and no stray "Forget the drive"; deleting the override
+  brings "Set up OneDrive" back.
+- **OneDrive is a folder you can bind** (feature, the cloud chunk). The hub's bind card asks **This device |
+  OneDrive**; choosing OneDrive signs in with a popup, lists the account's drives (personal, work, SharePoint
+  document libraries), steps into folders one level at a time, and **Use this folder** binds it. From there the
+  rows are the same as a local folder's, and opening one copies its bytes into OPFS exactly like a picked file —
+  the reader still reads a path and knows nothing about a drive. **Saving goes back where it came from**:
+  `writePdf` finds a drive reference on the recent record instead of a file handle, `If-Match`es the eTag the file
+  was opened at, and a `412` stops the save with a choice — *Replace it* (re-read the current eTag, then write) or
+  *Open theirs* (fetch, re-ingest, discard this window's edits). **Framework** (`Lembaran/src/cloud/`):
+  `types.ts`, `config.ts` (client id, tenant, redirect, primed by each app's `main.tsx` because a workspace package
+  does not keep `import.meta.env` — the first bug found, and it read as "OneDrive is disabled"), `oauth.ts` (the
+  only importer of `@azure/msal-browser`, dynamically, so nothing in the hub's first payload changed),
+  `onedrive.ts` (Graph: drives, paged listings capped at 300, read, write, upload sessions above 4 MB in 10 MiB
+  chunks), `graph.ts` (pure mapping/paging/status rules), `entries.ts` (`CloudEntry → FolderFile` with `cloud`
+  instead of `handle`), `store.ts` (Dexie v3: the account and the bound drive folder), and `fake.ts` (`?drive=fake`,
+  a drive in memory, gone from a build — `import.meta.env.DEV` in `fakeGate` removes the chunk). Hub:
+  `useBoundFolder` owns both sources, `DriveFolder.tsx` is the drive panel, `FolderLibrary` asks where a folder
+  lives before it opens a picker, and the badge reads `OneDrive · account`. CSP grew exactly
+  `login.microsoftonline.com`, `graph.microsoft.com`, `*.sharepoint.com`; `.env.example` documents the Entra app
+  registration (SPA platform, `Files.ReadWrite`). **Traps:** the fake flag was read with
+  `URLSearchParams.has('drive=fake')` — `has` takes a key, so it was always false; and `cloudConfigured()` first
+  read `import.meta.env` inside the framework, which a pre-bundled workspace package does not carry. Verified in
+  Chromium against the fake drive: bind → drive list → root (Reports + hello.pdf, `notes.txt` filtered) → bound
+  header and count → open (iframe URL carries `drive=fake`, 2 pages) → edit → **Save over it** wrote and moved the
+  fake version v1 → v2 with "Saved over hello.pdf"; a staged version bump made the next save show the conflict
+  (nothing written), **Replace it** wrote v3 → v4 with "Replaced the copy in OneDrive", and **Open theirs** reopened
+  the drive copy with the edits discarded; a fresh load restored the bound drive folder without a sign-in.
+  **23 framework tests** (17 new: item mapping, page merge and cap, chunk maths, status → error kind, drive rows).
+  MSAL measures 316.97 kB → **81.44 kB gzip** as its own lazy chunk, recorded in `FRAMEWORK.md`.
 - **Save and Compress are two features, not one dialog with checkboxes** (split). **Save** asks every time and then
   writes: no options in the way. `Ctrl+S` opens the same question. `savePdf` became `bakePdf` (record → the file's
   own bytes) and `writePdf` (bytes → the file, or a copy when it cannot be written), with `canOverwrite(path)` so

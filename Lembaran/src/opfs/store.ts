@@ -64,8 +64,26 @@ export async function removeSource(path: string): Promise<void> {
   const segments = path.split('/');
   const file = segments.pop();
   if (!file) return;
-  const dir = await walk(segments, false);
-  await dir.removeEntry(file);
+  try {
+    const dir = await walk(segments, false);
+    await dir.removeEntry(file);
+  } catch {
+    // already gone: a repeated Forget must not throw
+  }
+}
+
+/**
+ * Drops every copy Lembaran made for its readers. The originals — a folder on disk, a file in a drive — are not
+ * touched by this and never were: these are the bytes this browser stored so a reload could not lose the document.
+ */
+export async function clearSources(): Promise<void> {
+  try {
+    const root = await navigator.storage.getDirectory();
+    const folder = await root.getDirectoryHandle(ROOT);
+    await folder.removeEntry(SOURCES, { recursive: true }).catch(() => undefined);
+  } catch {
+    // no OPFS, or nothing stored yet
+  }
 }
 
 /**

@@ -13,6 +13,8 @@ export interface HubShellProps {
   onOpenRecent(entry: RecentEntry): void;
   /** no confirmation: a recent is a shortcut, not the file */
   onRemoveRecent(id: string): void;
+  /** forgets every recent and reclaims the copies Lembaran stored on this device */
+  onClearRecents(): void;
   onOpenFolderFile(entry: FolderFile): void;
   onDismissError(): void;
 }

@@ -14,11 +14,37 @@ Five readers work: **PDF**, **CSV**, **Word**, **PowerPoint** and **Excel**.
   picture. Pages can be dragged into a new order, right-clicked for rotate / insert / delete, and a blank page
   takes the same paper as the page it follows; undo and redo are on the bar and on `Ctrl+Z` / `Ctrl+Y`, and the
   fit button switches between fitting the width and fitting the height. A signature or a stamp can be drawn on a
-  pad or uploaded, then placed like any picture. A page keeps its shape when it is turned or zoomed past the
+  pad or uploaded, then placed like any picture. The page you are on and the way to another one sit **under the
+  thumbnails**, in the rail's own footer, so the bar above the page stays a bar of tools. A page keeps its shape when it is turned or zoomed past the
   window instead of being squeezed, a blank page shows its own paper, drawn ink keeps the thickness it will have
   in the file, and one Undo takes back exactly one change.
+  **The folder can live in OneDrive.** Bind a folder on this device — or, in a browser without folder access such as
+  Firefox, **upload** one, which is listed until you reload — or connect OneDrive and pick a folder inside it —
+  personal, work, or a SharePoint library — then open what is in it and save straight back into the
+  drive. If someone else saved that file in the meantime, Lembaran says so and lets you replace their copy or
+  open theirs; it never overwrites one silently. Choosing the folder happens in a window of its own — pick a drive,
+  step inside, **Use this folder**, or Cancel and nothing changes. **Connecting a drive needs nothing from you** —
+  no Microsoft developer account, no registering an app: this copy carries its own, you sign in with your own
+  Microsoft account (or use *Use my own app registration* if you keep one). While it connects, the folder section
+  says what it is doing with a moving indicator, so a slow sign-in never looks like nothing happened. Only the drives you actually use are listed
+  (your own OneDrive plus any document library you can reach), and the account line can **Add account** or
+  **Remove** it — right-click it, or press Shift+F10 — one account and one folder at a time. A drive folder expands
+  into the same large window a local folder does. The heading names where a folder comes from — **Local** or
+  **OneDrive** — and each recent says where it came from too (`Local`, `OneDrive`, or **OPFS** for a file that lives
+  only in this browser's storage); **Clear** on the Recent list forgets all of them *and* deletes the copies
+  Lembaran stored, while the files themselves are never touched. Connecting a drive is the only time anything
+  leaves this device, and then only to Microsoft. A drive needs an app registration that only you (or whoever hosts the app)
+  can create — one registration serves everyone who uses the app, and each person signs in with their own
+  account. The folder card walks you through the five steps, takes the id and, if the registration allows only
+  one organisation, its tenant — once, kept on this device, with nothing to rebuild. A sign-in that never
+  finishes can be cancelled instead of leaving the folder waiting. Once connected you **stay connected**: reloading,
+  opening a new tab or restarting the browser asks for nothing, and the account is matched silently for a day;
+  after that Microsoft requires one confirm, which normally needs no password and no typing — the page simply
+  leaves for Microsoft and comes back.
   **Save asks and then replaces the file**: `Ctrl+S` too, and nothing else is asked — the edits are written in as
-  they are. **Compress is its own button**, for when the file has to be smaller: pick **Low, Medium or High**, name
+  they are. A save with nothing changed does nothing at all, and the window says so. Because a save writes the whole
+  file (that is how the drive's API works), a file of a few megabytes offers **Compress first** when you are on a slow
+  or metered connection. **Compress is its own button**, for when the file has to be smaller: pick **Low, Medium or High**, name
   the **size you want it to end at**, or set it all by hand — photos (quality and the largest edge they keep) and
   the structure that carries the text and the vector lines, each on its own. It shows what each attempt came to
   before anything is written, and says plainly when a size cannot be reached because the rest of the file is the

@@ -1,4 +1,6 @@
 import Dexie, { type Table } from 'dexie';
+import type { CloudAccount, CloudFolderRef, CloudRef } from '../cloud/types';
+import { clearSources, removeSource } from '../opfs/store';
 
 export interface RecentEntry {
   /** content hash — the same file opened twice is one entry */
@@ -10,6 +12,11 @@ export interface RecentEntry {
   path: string;
   /** Kept when the browser allows it, so the file can be re-opened from disk. */
   handle?: FileSystemFileHandle;
+  /**
+   * Set when the bytes came from a connected drive. It is what saving over the original needs, exactly like
+   * `handle` is for a local file — the reader still reads an OPFS path and never sees this.
+   */
+  cloud?: CloudRef;
   openedAt: number;
 }
 
@@ -22,15 +29,37 @@ export interface BoundFolder {
   boundAt: number;
 }
 
+/** The signed-in drive account, as the hub shows it. Tokens live in the OAuth client's own cache. */
+export interface CloudSessionRow {
+  id: 'current';
+  account: CloudAccount;
+  lastUsedAt: number;
+}
+
+/** The one folder bound inside a drive. */
+export interface CloudFolderRow extends CloudFolderRef {
+  id: 'bound';
+  boundAt: number;
+}
+
 class LembaranDb extends Dexie {
   recent!: Table<RecentEntry, string>;
   folders!: Table<BoundFolder, string>;
+  cloudSession!: Table<CloudSessionRow, string>;
+  cloudFolder!: Table<CloudFolderRow, string>;
 
   constructor() {
     super('lembaran');
     this.version(1).stores({ recent: 'id, openedAt, name' });
     // v2: the bound folder lives beside the recents, so a reload can list it again
     this.version(2).stores({ recent: 'id, openedAt, name', folders: 'id, boundAt' });
+    // v3: a connected drive — the account for the UI, and the one folder bound inside it
+    this.version(3).stores({
+      recent: 'id, openedAt, name',
+      folders: 'id, boundAt',
+      cloudSession: 'id',
+      cloudFolder: 'id',
+    });
   }
 }
 
@@ -53,9 +82,14 @@ export async function recentByPath(path: string): Promise<RecentEntry | null> {
 }
 
 export async function forget(id: string): Promise<void> {
+  // the copy in OPFS exists only for this reader, so forgetting a document must reclaim it as well
+  const row = await db.recent.get(id);
   await db.recent.delete(id);
+  if (row?.path) await removeSource(row.path);
 }
 
+/** Forgetting every recent also reclaims every copy Lembaran stored; the originals are untouched. */
 export async function clearRecent(): Promise<void> {
   await db.recent.clear();
+  await clearSources();
 }

@@ -2,9 +2,14 @@ import {
   ensureWritePermission,
   hasFileSystemAccess,
   ingest,
+  readCloudFile,
   recentByPath,
   remember,
   saveBytesAs,
+  statCloudItem,
+  writeCloudFile,
+  CloudError,
+  type CloudRef,
 } from '@lembaran/framework';
 import { bake, type BakeInput } from './bake';
 
@@ -24,6 +29,26 @@ export interface SaveOutcome {
 }
 
 export class SaveError extends Error {}
+
+/** The drive's copy is not the one this window opened: the user decides, nothing is overwritten silently. */
+export class SaveConflictError extends SaveError {
+  readonly cloud: CloudRef;
+
+  constructor(cloud: CloudRef) {
+    super('The copy in OneDrive changed since you opened it.');
+    this.name = 'SaveConflictError';
+    this.cloud = cloud;
+  }
+}
+
+/** Whether this document can be written over: a drive document keeps its reference, a local one its handle. */
+export async function canOverwrite(path: string): Promise<boolean> {
+  if (!path) return false;
+  const record = await recentByPath(path).catch(() => null);
+  if (!record) return false;
+  if (record.cloud) return true;
+  return Boolean(record.handle) && hasFileSystemAccess();
+}
 
 /**
  * The file as it would be if every edit had always been there: page order, turns, blanks, ink, text, pictures and
@@ -50,8 +75,31 @@ export async function writePdf(input: {
 }): Promise<SaveOutcome> {
   const output = input.bytes;
   const record = await recentByPath(input.target.path).catch(() => null);
-  const handle = record?.handle;
 
+  // a document that came out of a drive goes back into it, in place, at the version we opened
+  if (input.overwrite && record?.cloud) {
+    const cloud = record.cloud;
+    try {
+      const written = await writeCloudFile(cloud.driveId, cloud.itemId, output, cloud.etag);
+      // the reader keeps reading from OPFS: re-ingest so the new bytes are what a reload opens
+      const ingested = await ingest(output, input.target.name, input.target.mime);
+      await remember({
+        id: ingested.hash,
+        name: input.target.name,
+        mime: input.target.mime,
+        size: ingested.size,
+        path: ingested.path,
+        cloud: { ...cloud, etag: written.etag },
+        openedAt: Date.now(),
+      });
+      return { kind: 'file', path: ingested.path, size: output.byteLength, savedBytes: output };
+    } catch (reason) {
+      if (reason instanceof CloudError && reason.kind === 'conflict') throw new SaveConflictError(cloud);
+      throw reason;
+    }
+  }
+
+  const handle = record?.handle;
   if (input.overwrite && handle && hasFileSystemAccess()) {
     const allowed = await ensureWritePermission(handle).catch(() => false);
     if (allowed) {
@@ -79,9 +127,53 @@ export async function writePdf(input: {
   return { kind: 'copy', path: null, size: output.byteLength, savedBytes: output };
 }
 
-/** Whether this document can be written over at all: it needs the handle it was opened with, and a browser that writes. */
-export async function canOverwrite(path: string): Promise<boolean> {
-  if (!path || !hasFileSystemAccess()) return false;
-  const record = await recentByPath(path).catch(() => null);
-  return Boolean(record?.handle);
+/**
+ * Save over what is in the drive now, whatever version this window opened: the user has seen the conflict and
+ * chosen to keep their copy. The fresh eTag is read first, so the write replaces a version it actually knows.
+ */
+export async function forceSaveToDrive(
+  input: { bytes: Uint8Array; target: SaveTarget },
+): Promise<SaveOutcome> {
+  const record = await recentByPath(input.target.path).catch(() => null);
+  const cloud = record?.cloud;
+  if (!cloud) throw new SaveError('The drive reference for this document is gone.');
+  const current = await statCloudItem(cloud.driveId, cloud.itemId);
+  const written = await writeCloudFile(cloud.driveId, cloud.itemId, input.bytes, current.etag);
+  const ingested = await ingest(input.bytes, input.target.name, input.target.mime);
+  await remember({
+    id: ingested.hash,
+    name: input.target.name,
+    mime: input.target.mime,
+    size: ingested.size,
+    path: ingested.path,
+    cloud: { ...cloud, etag: written.etag },
+    openedAt: Date.now(),
+  });
+  return { kind: 'file', path: ingested.path, size: input.bytes.byteLength, savedBytes: input.bytes };
+}
+
+/**
+ * Take the drive's copy instead of this window's edits: fetch it, store it, and hand back where it now lives so
+ * the caller can reopen. The caller is the one that throws the local record away.
+ */
+export async function reloadFromDrive(input: {
+  path: string;
+  name: string;
+  mime: string;
+}): Promise<{ path: string; bytes: Uint8Array; cloud: CloudRef | null }> {
+  const record = await recentByPath(input.path).catch(() => null);
+  const cloud = record?.cloud;
+  if (!cloud) throw new SaveError('The drive reference for this document is gone.');
+  const read = await readCloudFile(cloud.driveId, cloud.itemId);
+  const ingested = await ingest(read.bytes, input.name, input.mime);
+  await remember({
+    id: ingested.hash,
+    name: input.name,
+    mime: input.mime,
+    size: ingested.size,
+    path: ingested.path,
+    cloud: { ...cloud, etag: read.etag },
+    openedAt: Date.now(),
+  });
+  return { path: ingested.path, bytes: read.bytes, cloud: { ...cloud, etag: read.etag } };
 }

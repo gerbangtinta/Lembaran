@@ -30,7 +30,7 @@ export function HubApp() {
   const [handoff, setHandoff] = useState<Handoff | null>(useMemo(restore, []));
   const [busyId, setBusyId] = useState<ReaderId | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { recents, refresh, remove: removeRecent } = useRecents();
+  const { recents, refresh, remove: removeRecent, clear: clearRecents } = useRecents();
   const folder = useBoundFolder();
   const mobile = useIsMobile();
 
@@ -139,6 +139,7 @@ export function HubApp() {
     onLaunch: (entry: ReaderEntry) => void launch(entry),
     onOpenRecent: openRecent,
     onRemoveRecent: removeRecent,
+    onClearRecents: clearRecents,
     onOpenFolderFile: (file: FolderFile) => void openFolderFile(file),
     onDismissError: () => setError(null),
   };

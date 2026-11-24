@@ -102,7 +102,6 @@ export function PdfShell(props: ShellProps) {
         !props.fullscreen.active ? (
           <PdfToolbar
             page={props.page}
-            numPages={props.pages.length}
             zoom={props.zoom}
             tool={props.annotations.tool}
             color={props.annotations.color}
@@ -129,7 +128,6 @@ export function PdfShell(props: ShellProps) {
             onRotate={props.onRotatePage}
             onDeletePage={props.onDeletePage}
             onInsertBlank={props.onInsertBlankPage}
-            onGoTo={props.onGoTo}
             onZoomIn={props.onZoomIn}
             onZoomOut={props.onZoomOut}
             onFit={props.onFit}

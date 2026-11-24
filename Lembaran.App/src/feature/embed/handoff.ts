@@ -4,9 +4,11 @@ import {
   ingest,
   pickFileFallback,
   pickFileHandle,
+  readCloudFile,
   readFolderFile,
   readHandleBytes,
   remember,
+  type CloudRef,
   type FolderFile,
 } from '@lembaran/framework';
 import type { ReaderEntry } from '../choose';
@@ -72,17 +74,30 @@ export async function handoffFromFile(file: File, reader: ReaderEntry): Promise<
 /**
  * A file the bound folder offered. Same handoff as a picked file: copy to OPFS, remember it, open by
  * path — and keep the file handle when the listing has one, so the entry points back at the disk copy.
+ * A row from a connected drive keeps its drive reference instead: that is what saving back needs.
  */
 export async function handoffFromFolderFile(entry: FolderFile, reader: ReaderEntry): Promise<Handoff> {
   const mime = reader.mimeTypes[0] ?? 'application/octet-stream';
-  const ingested = await ingest(await readFolderFile(entry), entry.name, mime);
+  let bytes: Uint8Array;
+  let cloud: CloudRef | undefined;
+
+  if (entry.cloud) {
+    const read = await readCloudFile(entry.cloud.driveId, entry.cloud.itemId);
+    bytes = read.bytes;
+    // the eTag the bytes were read at travels with the record: a save carries it as If-Match
+    cloud = { ...entry.cloud, etag: read.etag };
+  } else {
+    bytes = await readFolderFile(entry);
+  }
+
+  const ingested = await ingest(bytes, entry.name, mime);
   await remember({
     id: ingested.hash,
     name: entry.name,
     mime,
     size: ingested.size,
     path: ingested.path,
-    ...(entry.handle ? { handle: entry.handle } : {}),
+    ...(cloud ? { cloud } : entry.handle ? { handle: entry.handle } : {}),
     openedAt: Date.now(),
   });
   return { reader, path: ingested.path, name: entry.name };
@@ -93,6 +108,10 @@ export function frameUrl(handoff: Handoff): string {
     ? `/${handoff.reader.folder}/index.html`
     : `/${handoff.reader.slug}/`;
   const query = new URLSearchParams({ path: handoff.path, name: handoff.name });
+  // the development fake drive has to be visible inside the frame too, or a save there would reach the network
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).get('drive') === 'fake') {
+    query.set('drive', 'fake');
+  }
   return `${base}?${query.toString()}`;
 }
 

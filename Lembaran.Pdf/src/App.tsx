@@ -3,7 +3,7 @@ import type { DocumentSource } from '@lembaran/framework';
 import { onZoomRequest, useIsMobile } from '@lembaran/ui';
 import { useAnnotations } from './feature/annotate';
 import { A4, sourceToDisplay, usePdfEdits } from './feature/edit';
-import { bakePdf, canOverwrite, writePdf, type SaveOutcome } from './feature/save';
+import { bakePdf, canOverwrite, forceSaveToDrive, reloadFromDrive, writePdf, SaveConflictError, type SaveOutcome } from './feature/save';
 import type { SaveChoice } from './presentations/ui/SaveDialog';
 import { SaveDialog } from './presentations/ui/SaveDialog';
 import { CompressDialog, type CompressChoice } from './presentations/ui/CompressDialog';
@@ -46,6 +46,17 @@ interface Armable {
 
 const clamp01 = (value: number, min = 0, max = 1): number => Math.min(max, Math.max(min, value));
 
+/**
+ * A short fingerprint of the bytes about to be written. Saving always writes the whole file — over a drive that is
+ * a full upload — so an identical bake must never leave the device twice. Empty when the browser has no SubtleCrypto
+ * (an insecure origin), and the caller then simply writes as before.
+ */
+async function digestOf(bytes: Uint8Array): Promise<string> {
+  if (typeof crypto === 'undefined' || !crypto.subtle) return '';
+  const hash = await crypto.subtle.digest('SHA-256', new Uint8Array(bytes).buffer);
+  return Array.from(new Uint8Array(hash).slice(0, 12), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 const IMAGE_WIDTH = 0.4;
 const SIGNATURE_WIDTH = 0.3;
 const STAMP_WIDTH = 0.34;
@@ -85,8 +96,12 @@ export function PdfApp({ source = null, assetBase, apiRef }: Props) {
   /** compress works on the file with every edit baked in, which is made once when its window opens */
   const [compressOpen, setCompressOpen] = useState(false);
   const [baked, setBaked] = useState<Uint8Array | null>(null);
+  /** fingerprint of what was last written: an identical bake must not be uploaded twice */
+  const lastWrite = useRef<string>('');
   /** a sentence for the status line after a save, the way a tool left armed says what to do next */
   const [notice, setNotice] = useState<string | null>(null);
+  /** the drive's copy moved on: the save stopped and is waiting for the reader to choose */
+  const [conflict, setConflict] = useState(false);
   const [editTool, setEditTool] = useState<EditTool>('none');
   /** the text window: a new box, an existing one, or a run of the page being covered */
   const [textTarget, setTextTarget] = useState<TextTarget | null>(null);
@@ -516,16 +531,31 @@ export function PdfApp({ source = null, assetBase, apiRef }: Props) {
   const saveNow = useCallback(
     async (choice: SaveChoice) => {
       if (!current) return;
+      // a whole file goes over the wire on every write, so a save with nothing changed is bytes spent for nothing
+      if (!edits.dirty) {
+        announce('Nothing to save — no changes since the file was last written.');
+        setSaveOpen(false);
+        return;
+      }
       setSaving(true);
       setSaveError(null);
       setSaveResult(null);
+      setConflict(false);
       try {
         const output = await bakeRecord();
+        const digest = await digestOf(output);
+        if (digest.length > 0 && digest === lastWrite.current) {
+          announce('Already saved — the edits came back to the same file.');
+          setSaveOpen(false);
+          edits.clear();
+          return;
+        }
         const outcome = await writePdf({
           bytes: output,
           target: { path: current.kind === 'opfs' ? current.path : '', name: current.name, mime: 'application/pdf' },
           overwrite: choice.overwrite,
         });
+        lastWrite.current = digest;
         await settleSave(outcome);
         const size = Math.round(outcome.size / 1024).toLocaleString();
         setSaveResult(
@@ -535,13 +565,69 @@ export function PdfApp({ source = null, assetBase, apiRef }: Props) {
         );
         announce(outcome.kind === 'copy' ? `Saved a copy · ${size} KB` : `Saved over ${current.name} · ${size} KB`);
       } catch (reason) {
-        setSaveError(reason instanceof Error ? reason.message : String(reason));
+        if (reason instanceof SaveConflictError) {
+          setConflict(true);
+          setSaveError(null);
+        } else {
+          setSaveError(reason instanceof Error ? reason.message : String(reason));
+        }
       } finally {
         setSaving(false);
       }
     },
     [announce, bakeRecord, current, settleSave],
   );
+
+  /** Keep this window's copy: read the drive's current version first, then replace it. */
+  const saveOverConflict = useCallback(async () => {
+    if (!current) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const output = await bakeRecord();
+      const outcome = await forceSaveToDrive({
+        bytes: output,
+        target: { path: current.kind === 'opfs' ? current.path : '', name: current.name, mime: 'application/pdf' },
+      });
+      await settleSave(outcome);
+      setConflict(false);
+      setSaveOpen(false);
+      announce(`Replaced the copy in OneDrive · ${Math.round(outcome.size / 1024).toLocaleString()} KB`);
+    } catch (reason) {
+      setSaveError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setSaving(false);
+    }
+  }, [announce, bakeRecord, current, settleSave]);
+
+  /** Take the drive's copy instead: this window's edits go, and the newer file is what opens next. */
+  const takeDriveCopy = useCallback(async () => {
+    if (!current) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const fresh = await reloadFromDrive({
+        path: current.kind === 'opfs' ? current.path : '',
+        name: current.name,
+        mime: 'application/pdf',
+      });
+      const before = documentKey(current);
+      const next: DocumentSource = { kind: 'opfs', path: fresh.path, name: current.name, mime: 'application/pdf' };
+      await rekeyAnnotations(before, documentKey(next)).catch(() => undefined);
+      edits.clear();
+      setSelectedItem(null);
+      setPending(null);
+      setConflict(false);
+      setSaveOpen(false);
+      setCurrent(next);
+      setPage(1);
+      announce('Opened the copy from OneDrive — this window’s edits were discarded');
+    } catch (reason) {
+      setSaveError(reason instanceof Error ? reason.message : String(reason));
+    } finally {
+      setSaving(false);
+    }
+  }, [announce, current, edits]);
 
   /** Compress is its own window: it needs the baked file before it can try a pass, so it is made here. */
   const openCompress = useCallback(async () => {
@@ -742,8 +828,18 @@ export function PdfApp({ source = null, assetBase, apiRef }: Props) {
           busy={saving}
           error={saveError}
           result={saveResult}
-          onClose={() => setSaveOpen(false)}
+          conflict={conflict}
+          onSaveAnyway={() => void saveOverConflict()}
+          onTakeDriveCopy={() => void takeDriveCopy()}
+          onClose={() => {
+            setSaveOpen(false);
+            setConflict(false);
+          }}
           onSave={(choice) => void saveNow(choice)}
+          onCompress={() => {
+            setSaveOpen(false);
+            void openCompress();
+          }}
         />
       )}
       {compressOpen && baked !== null && (

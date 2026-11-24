@@ -165,27 +165,25 @@ request. Its own Playwright spec is part of the chunk, not a later task.
 - Sync, accounts, collaboration. Out of scope *for this version*; a collaboration backend stays rejected,
   while connected drives are planned below.
 
-### Cloud drives — OneDrive and Google Drive (named 2026-11-24, not built)
+### Cloud drives — OneDrive built 2026-11-25; Google Drive not started
 
-Asked for by the user for a later version: open a document out of a **OneDrive** or **Google Drive**
-account, keep it in step with the drive while it is open ("live sync"), and eventually save edits back
-to it. The design is recorded in [ARCHITECTURE.md § Cloud drives](ARCHITECTURE.md#cloud-drives-planned-not-built);
-this is the work it implies, so the next version can pick it up without re-deciding the shape.
+Asked for by the user: open a document out of a **OneDrive** account, bind a folder from the hub, and save edits
+back into it. OneDrive is built (see [ARCHITECTURE.md § Cloud drives](ARCHITECTURE.md#cloud-drives-onedrive-built-google-drive-not-started),
+`Lembaran/src/cloud/`, and the 2026-11-25 entry in [CHANGELOG-DEV.md](CHANGELOG-DEV.md)). **Google Drive is
+deliberately out of scope** — no provider registry exists, and the code names OneDrive rather than a union, so a
+second drive would be a sibling module when it is wanted.
 
-- [ ] Treat a drive exactly like a picked file: a `{kind:'cloud'}` `DocumentSource` that the framework
-      resolves into an OPFS copy, so no reader and no engine learns a provider exists. Same seam as the
-      File System Access API — bytes in, bytes out, a token for "did it change".
-- [ ] OAuth 2.0 + PKCE per provider (`onedrive` via Microsoft Graph, `gdrive` via Drive v3), popup
-      based, no client secret in the app, tokens in IndexedDB only, `connect-src` listing the two API
-      origins and nothing else. No Lembaran server, ever — that rule does not bend for this feature.
-- [ ] Change detection without a backend: delta query per provider (`/delta`, `changes.list`) polled
-      only while the tab is visible, plus a re-read on focus; a changed `etag` refreshes the OPFS copy
-      and tells the reader to reopen.
-- [ ] Write-back once a format can edit: `DocumentSource.write(bytes, etag)`, provider conflicts
-      (`412`/`409`) surfaced as a conflict the user resolves — never a silent overwrite.
-- [ ] Decide the two open questions before writing code (see ARCHITECTURE.md): **where the integrated
-      file manager lives** (a Lembaran-side library across local + both drives, or the provider's own
-      picker with no local library) and **where a save lands** (in place with `etag` conflicts, or a
-      local copy plus an explicit upload step).
-- [ ] Disconnect path that revokes the token and forgets it, and an honest offline story for a cached
-      cloud document (readable-but-stale vs refused).
+- [x] Treat a drive exactly like a picked file: the bytes land in OPFS and the reader opens a path, so no reader
+      and no engine learns a drive exists. `DocumentSource` stays `opfs | bytes`; the drive reference rides on the
+      recent record, which is what the save path reads.
+- [x] OAuth 2.0 + PKCE through `@azure/msal-browser`, popup based, no client secret, tokens in the browser's own
+      storage, `connect-src` listing `login.microsoftonline.com`, `graph.microsoft.com` and `*.sharepoint.com`.
+      No Lembaran server, ever.
+- [ ] Change detection: a `/delta` poll while the tab is visible. v1 checks the eTag when a save happens and
+      reports a conflict, which is honest but not live.
+- [x] Write-back: `If-Match` on every overwrite; `409`/`412` becomes a conflict the user resolves (*replace it* /
+      *open theirs*), never a silent overwrite.
+- [x] The two open questions are answered in ARCHITECTURE.md: the file manager is ours in the hub, and a save lands
+      in place with eTag conflicts.
+- [x] Disconnect path that forgets the account and the bound folder; offline reads the cached OPFS copy and a save
+      says "sign in to OneDrive again" instead of writing anywhere else.

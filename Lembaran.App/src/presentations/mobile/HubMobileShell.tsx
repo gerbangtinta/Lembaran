@@ -3,6 +3,8 @@ import { ThemeToggle } from '@lembaran/ui';
 import type { HubShellProps } from '../props';
 import { ReaderCard } from '../component/ReaderCard';
 import { SearchIcon } from '../component/icons';
+import { ClearRecents } from '../component/ClearRecents';
+import { recentSource, SOURCE_LABEL } from '../sources';
 import { MobileFolderList } from './MobileFolderList';
 import './hub-phone.css';
 
@@ -18,6 +20,7 @@ export function HubMobileShell({
   onLaunch,
   onOpenRecent,
   onRemoveRecent,
+  onClearRecents,
   onOpenFolderFile,
   onDismissError,
 }: HubShellProps) {
@@ -132,12 +135,23 @@ export function HubMobileShell({
 
         {tab === 'folder' && (
           <section aria-label="Bound folder" className="hub-pane">
+            {folder.error !== null && (
+              <p className="hub-flag" role="alert">
+                {folder.error}
+              </p>
+            )}
             <MobileFolderList folder={folder} query={query} onOpen={onOpenFolderFile} />
           </section>
         )}
 
         {tab === 'recent' && (
           <section aria-label="Recently opened">
+            {recents.length > 0 && (
+              <div className="hub-pane-head">
+                <span className="hub-count">{recents.length}</span>
+                <ClearRecents onClear={onClearRecents} />
+              </div>
+            )}
             {recents.length === 0 ? (
               <p className="hub-note">Nothing opened yet. Open a file to see it here.</p>
             ) : (
@@ -151,6 +165,7 @@ export function HubMobileShell({
                     >
                       <span className="hub-recent-name">{recent.name}</span>
                       <span className="hub-recent-when">
+                        {SOURCE_LABEL[recentSource(recent)]} ·{' '}
                         {new Date(recent.openedAt).toLocaleDateString(undefined, {
                           month: 'short',
                           day: 'numeric',

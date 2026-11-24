@@ -1,4 +1,5 @@
 import { extensionOf } from '../files/pick';
+import type { CloudRef } from '../cloud/types';
 
 /** A file the bound folder offers, before its bytes are read. */
 export interface FolderFile {
@@ -12,6 +13,8 @@ export interface FolderFile {
   handle?: FileSystemFileHandle;
   /** Present only on the fallback path: the bytes are already in hand. */
   file?: File;
+  /** Present instead of `handle` when the file lives in a connected drive. */
+  cloud?: CloudRef;
 }
 
 /** How many files a listing will show before it stops; a folder of ten thousand is not a library. */

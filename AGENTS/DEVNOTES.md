@@ -286,6 +286,29 @@ GitHub Actions builds, Cloudflare Pages only hosts — no build minutes spent on
   load-bearing: `SharedArrayBuffer` and the WASM workers need cross-origin isolation, and `font-src 'self'`
   is what keeps a substitute font from ever leaving the origin. A host that drops `_headers` breaks both.
 
+### OneDrive on a hosted copy
+
+`VITE_MS_CLIENT_ID` and `VITE_MS_TENANT` are **build-time only**: Vite inlines them as string literals into
+`dist/assets/*.js`, so a static host needs no server, no runtime configuration and no environment file. Verified
+2026-11-25 by building with a marker value and finding `clientId:\`deadbeef-…\`` in the hub's chunk *and* the PDF
+reader's. The value is public by design — a single-page app has no secret, and the id is visible in the sign-in URL
+anyway. `.env.local` is gitignored (`*.local`); CI supplies the same value:
+
+```yaml
+      - run: npm run gates
+        env:
+          VITE_MS_CLIENT_ID: ${{ vars.VITE_MS_CLIENT_ID }}
+          VITE_MS_TENANT: ${{ vars.VITE_MS_TENANT || 'common' }}
+```
+
+- The Entra registration must list the **deployed origin** as a Single-page application redirect URI —
+  `https://<project>.pages.dev/` — beside `http://localhost:5173/` for development. Any other origin is refused
+  before the app is even reached.
+- With no id in the build, the folder card offers *Set up OneDrive* and each visitor can enter their own; with one
+  inlined, nobody sees that step and everybody signs in to the same registration with their own account.
+- The sign-in is a popup to `login.microsoftonline.com`; `connect-src` already allows it, and COOP/COEP do not
+  block a normal popup (`frame-src 'self'` only rules out the silent SSO iframe).
+
 
 ## Known bugs
 

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { forget, listRecent, type RecentEntry } from '@lembaran/framework';
+import { clearRecent, forget, listRecent, type RecentEntry } from '@lembaran/framework';
 
 export function useRecents(): {
   recents: RecentEntry[];
   refresh(): void;
   remove(id: string): void;
+  clear(): void;
 } {
   const [recents, setRecents] = useState<RecentEntry[]>([]);
 
@@ -24,9 +25,16 @@ export function useRecents(): {
     [refresh],
   );
 
+  /** Everything at once, including the copies Lembaran stored so a reload could not lose them. */
+  const clear = useCallback(() => {
+    void clearRecent()
+      .then(refresh)
+      .catch(refresh);
+  }, [refresh]);
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { recents, refresh, remove };
+  return { recents, refresh, remove, clear };
 }
