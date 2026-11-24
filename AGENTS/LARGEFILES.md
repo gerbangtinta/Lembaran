@@ -7,6 +7,6 @@ deleted by hand.
 
 | File | Lines | Area |
 | --- | --- | --- |
-| _(none yet)_ | — | — |
+| `Lembaran.App/src/presentations/hub.css` | 1020 | — |
 
 Threshold: 1000 lines.

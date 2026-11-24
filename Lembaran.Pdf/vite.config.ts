@@ -32,7 +32,10 @@ export default defineConfig({
   base: '/pdf/',
   plugins: [react(), pdfjsAssets()],
   resolve: { dedupe: ['react', 'react-dom'] },
+  // `/fonts/*` is copied to `dist/fonts` once by scripts/build-all.mjs; see Lembaran.Docs.
+  publicDir: resolve(import.meta.dirname, '../public'),
   build: {
+    copyPublicDir: false,
     // absolute: a relative outDir resolves against the workspace folder
     outDir: resolve(import.meta.dirname, '../dist/pdf'),
     emptyOutDir: true,

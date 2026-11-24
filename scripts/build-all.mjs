@@ -3,7 +3,7 @@
 //   2. each `Lembaran.<Format>` that declares `lembaran.slug` builds into `dist/<slug>/`
 // Adding a reader needs no edit here: declare the metadata and it is included.
 import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, readFileSync, readdirSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -68,7 +68,12 @@ for (const [from, to] of served) {
   copyFileSync(join(ROOT, from), join(DIST, to));
   expect(to, from);
 }
-console.log('\n  license + notices copied to dist/ (LICENSE.txt, NOTICE.txt, THIRD-PARTY-NOTICES.txt)');
+
+// The standard-font substitutes are referenced as `/fonts/*` from every reader's CSS, so one copy
+// sits at the site root. Their licences travel inside the folder.
+cpSync(join(ROOT, 'public', 'fonts'), join(DIST, 'fonts'), { recursive: true });
+expect('fonts/manifest.json', 'The font bundle');
+console.log('\n  license + notices copied to dist/, and the standard fonts to dist/fonts/');
 
 console.log(`\nSite assembled in dist/ in ${Math.round((Date.now() - started) / 100) / 10}s:`);
 console.log('  /            the hub');

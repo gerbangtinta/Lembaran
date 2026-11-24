@@ -1,0 +1,65 @@
+{
+  "note": "Metric-compatible substitutes for the Microsoft core fonts. The originals are proprietary and are never served; these files are open-licensed and unmodified. Family names in CSS are aliases so a document keeps its own layout.",
+  "families": [
+    {
+      "family": "Carlito",
+      "replaces": ["Calibri"],
+      "license": "OFL-1.1",
+      "licenseText": "licenses/OFL-Carlito.txt",
+      "copyright": "Copyright 2013 The Carlito Project Authors. Reserved Font Name \"Carlito\".",
+      "version": "1.104",
+      "source": "https://github.com/googlefonts/carlito",
+      "faces": [
+        { "file": "Carlito-Regular.ttf", "weight": 400, "style": "normal" },
+        { "file": "Carlito-Bold.ttf", "weight": 700, "style": "normal" },
+        { "file": "Carlito-Italic.ttf", "weight": 400, "style": "italic" },
+        { "file": "Carlito-BoldItalic.ttf", "weight": 700, "style": "italic" }
+      ]
+    },
+    {
+      "family": "Liberation Sans",
+      "replaces": ["Arial", "Helvetica"],
+      "license": "OFL-1.1",
+      "licenseText": "licenses/OFL-Liberation.txt",
+      "copyright": "Digitized data copyright (c) 2010 Google Corporation; Copyright (c) 2012 Red Hat, Inc. Reserved Font Name Liberation.",
+      "version": "2.1.5",
+      "source": "https://github.com/liberationfonts/liberation-fonts",
+      "faces": [
+        { "file": "LiberationSans-Regular.ttf", "weight": 400, "style": "normal" },
+        { "file": "LiberationSans-Bold.ttf", "weight": 700, "style": "normal" },
+        { "file": "LiberationSans-Italic.ttf", "weight": 400, "style": "italic" },
+        { "file": "LiberationSans-BoldItalic.ttf", "weight": 700, "style": "italic" }
+      ]
+    },
+    {
+      "family": "Liberation Serif",
+      "replaces": ["Times New Roman", "Times"],
+      "license": "OFL-1.1",
+      "licenseText": "licenses/OFL-Liberation.txt",
+      "copyright": "Digitized data copyright (c) 2010 Google Corporation; Copyright (c) 2012 Red Hat, Inc. Reserved Font Name Liberation.",
+      "version": "2.1.5",
+      "source": "https://github.com/liberationfonts/liberation-fonts",
+      "faces": [
+        { "file": "LiberationSerif-Regular.ttf", "weight": 400, "style": "normal" },
+        { "file": "LiberationSerif-Bold.ttf", "weight": 700, "style": "normal" },
+        { "file": "LiberationSerif-Italic.ttf", "weight": 400, "style": "italic" },
+        { "file": "LiberationSerif-BoldItalic.ttf", "weight": 700, "style": "italic" }
+      ]
+    },
+    {
+      "family": "DejaVu Sans",
+      "replaces": ["Verdana"],
+      "license": "Bitstream-Vera",
+      "licenseText": "licenses/DejaVu.txt",
+      "copyright": "Copyright (c) 2003 by Bitstream, Inc. Copyright (c) 2006 by Tavmjong Bah. DejaVu changes are in the public domain.",
+      "version": "2.37",
+      "source": "https://dejavu-fonts.github.io/",
+      "faces": [
+        { "file": "DejaVuSans.ttf", "weight": 400, "style": "normal" },
+        { "file": "DejaVuSans-Bold.ttf", "weight": 700, "style": "normal" },
+        { "file": "DejaVuSans-Oblique.ttf", "weight": 400, "style": "italic" },
+        { "file": "DejaVuSans-BoldOblique.ttf", "weight": 700, "style": "italic" }
+      ]
+    }
+  ]
+}

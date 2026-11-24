@@ -9,6 +9,214 @@ that were made instead of code.
 
 ## 2026-11-24
 
+- **Pastel green becomes the palette, the hub becomes an app, and a folder can be bound for good** (UI
+  feature + new capability). `tokens.css` now carries two palettes only — pastel green (default) and a
+  green-charcoal dark — built from one green that acts (`--lb-accent` #2c6a43), one clay that marks
+  (`--lb-accent-2` #b06a4a) and green-tinted surfaces, so no chrome colour is `#fff`. The single white
+  left is `--lb-paper`, documented as "the sheet a document is drawn on" and used by `surface.css`, the
+  rail thumbnail and the Excel canvas; `pdf.css`/`excel.css`/`rail.css` lost their literal `#fff`. The
+  retired warm `light` theme is folded into pastel (`normalisePreference`), so `THEME_ORDER` is
+  `['pastel','dark']` and a stored `light` still resolves. Shared control classes (`lb-primary`,
+  `lb-ghost`, `lb-marker`, `lb-chip`, `lb-label`, `lb-field`) were added to `tokens.css` so the hub and
+  every reader toolbar share one vocabulary.
+  The hub is now a sticky bar (brand + version chip, search over readers and files, bind-folder button,
+  theme toggle) over three sections in a fixed order — Folder, Readers, Recent — with a `ReaderCard`
+  that puts the extension in a chip and the only filled button on the card. `HubShell` and
+  `HubMobileShell` were rewritten as separate files with rewritten stylesheets (`hub.css`,
+  `mobile/hub-phone.css`); the phone got tabs (`Readers` / `Folder · n` / `Recent`) instead of one long
+  scroll, and its own folder list (`mobile/MobileFolderList.tsx`) beside the desktop panel
+  (`layout/FolderLibrary.tsx`). New `presentations/props.ts` is the only thing they share.
+  **Bound folder**: `Lembaran/src/folders/` (`showDirectoryPicker`, Dexie v2 table `folders`,
+  `folderPermission` vs `ensureFolderPermission`, a `listFolder` walk bounded by `FOLDER_DEPTH_LIMIT` 8 and
+  `FOLDER_FILE_LIMIT` 300, `readFolderFile`, and a persistence-free `pickFolderFallback` via
+  `webkitdirectory` that reads `webkitRelativePath` so nested files survive there too) with pure helpers
+  `shouldListPath` / `eligiblePaths` / `sortFolderFiles` / `folderView` / `pathSegments` and the hook
+  `Lembaran.App/src/feature/folder/store.ts`; opening a folder file is `handoffFromFolderFile` (read through
+  the handle → OPFS → remember → hand over a path). The section browses one level at a time instead of
+  printing paths: subfolders first, breadcrumb to walk up, **ten 44 px rows** in a `max-height: 440px`
+  scroller, and an `Expand` dialog at **90 vw × 90 vh** over `backdrop-filter: blur(10px)` on a darkened
+  page — `layout/FolderOverlay.tsx` and `mobile/MobileFolderOverlay.tsx`, each with its own browser
+  component. The bar carries no bind button, `Change folder` re-puts the same `bound` record, `Unbind` swaps
+  itself for an inline `Forget / Cancel` pair, and recents gained a per-row **×** (`forget(id)` through
+  `useRecents().remove`) with no confirmation.
+  Two chrome fixes after that: the hub's reader strip is now a **single 30 px line** — a `‹` button plus the
+  file name, no `Format — ` prefix — because the reader's own toolbar already shows the title; and
+  **Ctrl/⌘ + wheel scales the app instead of the browser** — `theme/appScale.ts` cancels the wheel event,
+  clamps 80–150%, persists `lembaran.scale`, shares it across frames through storage events, and `#root`
+  applies `zoom` with `width/height: calc(100vw | 100dvh / s)` so nothing overflows (measured at 110%:
+  `#root` still 1440 px wide in a 1440 px window). Frames embedded in the hub skip their own scaling
+  (`ownsScale()`), and the hub bar shows the percentage as a reset button.
+  Follow-ups the same hour: the percentage chip is **hidden at 100%** (only a changed scale is information),
+  and the breadcrumb lost its `Up` label — the way out is a **`..` row at the top of the list**, with an up
+  arrow and `up one folder` under it, in both the desktop and the phone browser.
+  The folder's **Refresh button was removed** (and `refresh` from `BoundFolderApi`): on Chromium a re-walk
+  returns the listing already on screen, and on Firefox the `webkitdirectory` fallback imported every file at
+  pick time, so it could not show anything new either. The listing now re-reads on bind, on Reconnect and on
+  reload, which are the moments something actually changes.
+  Then the folder header became icons — `component/icons.tsx` (`ExpandIcon`, `SwapFolderIcon`, `UnlinkIcon`)
+  on 28 px `.hub-icon-btn`s with `title` + `aria-label`; the **"first 300 shown" flag was dropped** (the cap is
+  a guard, not information); and the count chip grew a hover/focus tooltip built from `folderCounts` (folders
+  holding documents + a per-extension count mapped to reader names), so `126 readable` explains itself as
+  `3 folders / 5 Excel / 6 Word …` without spending a line of the page. The expanded dialog also learned the
+  second way to read a folder: a **Folders / All files** switch, with `FlatFileList` (desktop) and
+  `MobileFlatList` (phone) listing every document in the tree with its folder in the meta line. Verified:
+  expanding from `samples / reports` opens at that path with `["..", "2024"]`, All files lists all 6 documents,
+  panel still 1296 × 810 in 1440 × 900, Escape closes, and the tooltip goes from opacity 0 to 1 with
+  `1 folder / 2 PDF / 1 CSV / 1 Excel / 1 PowerPoint / 1 Word`.
+  Then the folder area took over the browser's own back/forward: `feature/folder/history.ts` (`useFolderPath`)
+  pushes `{ lbFolder: path }` per step and restores it on `popstate`, so the mouse thumb buttons and
+  Alt+Left/Right walk the folder tree instead of leaving the hub; `mousedown` on buttons 3/4 is
+  `preventDefault`ed so they cannot act as page controls. The hook is mounted inside the folder panel only, so
+  an open reader keeps ordinary history. Verified: root `state ''` → `reports` `state 'reports'` →
+  `history.back()` returns to `samples` with the URL still `/` → `history.forward()` returns into `reports`;
+  a synthetic `mousedown({button: 3})` is cancelled.
+  Then the phone layout stopped double-scrolling: `.hub-shell-phone` is `overflow: hidden`, `.hub-main` is the
+  flex remainder (`min-height: 0`), the active section takes `height: 100%`, and the folder pane hands that
+  height to `.hub-browse-phone` (`flex: 1; max-height: none`) — the ten-row cap stays a desktop rule, which is
+  where a page scroll and a list scroll never coexist. Measured in a 390 × 844 frame with 20 files: list
+  `636 px` tall, content `1496 px`, `documentScrolls: false`, `shell overflow: hidden`, and every hub scroller
+  is `scrollbar-width: thin` with an 8 px transparent-track thumb (`::-webkit-scrollbar-thumb` too).
+  Final polish from the same review: the chip reads `N files` instead of `N readable`, the footer line lost
+  "here" (`1 folder · 5 files`, or just `0 files`), the `..` row lost its forward chevron (an up arrow is the
+  only direction it goes), the tooltip became a **tile board** (`1 folder / 2 PDF / …`, one tile per kind,
+  singular-aware), the folder icons grew to 34 px (40 px on a phone) with clearer glyphs — arrows out of a
+  frame for expand, a folder with a circular arrow for change, a broken chain for unbind — and the phone gained
+  the search box back (`hub-search-phone`, filtering readers and folder files) with the theme toggle pushed to
+  the bar's end. Measured in the 390 px frame: icon 40 px, toggle gap 14 px (the bar's own padding), search
+  present, `hello` filters the folder to four files, `documentScrolls: false`.
+  Then search learned the whole tree and the wheel learned which view it is over. `searchFolder` (pure, in
+  `entries.ts`) returns matching **folders anywhere** — tap one to walk to it — and matching **files anywhere**
+  with their folder in the meta line, and both browsers render those results in place of the level view; the
+  expanded dialog got the same field beside its **Folders / All files** switch. `theme/appScale.ts` stopped
+  scaling the app whenever a reader was on screen: `onZoomRequest` registers a reader's document zoom, and
+  Ctrl/⌘ + wheel now dispatches `lembaran:zoom` (`ZOOM_REQUEST`) instead of touching `--lb-app-scale` — so the
+  PDF **re-rasterises its canvas** at the new scale rather than being zoomed as pixels, which is what made a
+  zoomed page blurry. All four readers register it (`App.tsx` in `Lembaran.{Pdf,Docs,Excel,Pptx}` →
+  `zoomIn`/`zoomOut`, `scaleIn`/`scaleOut`); the hub, with no reader in its own window, still moves the app
+  scale. Verified in Chromium: one `ctrlKey` wheel inside the PDF frame took the reader from `100%` to `125%`
+  with `detail {direction: 1}`, the fit canvas went from `630 × 892` to `1218 × 1725` device pixels (a fresh
+  raster, not a stretched bitmap), and neither window carried `--lb-app-scale`; on the hub chrome the same
+  wheel moved `--lb-app-scale` `1 → 1.1 → 1`. The phone tile board was also still stretching: it reserved
+  four columns whatever the folder held, so `1 folder / 2 PDF` sat in a half-empty box — `hub-phone.css` now
+  lays it out as **two wrapping columns at `width: max-content`**, measured at 390 px as `166 × 163` inside the
+  window, with the desktop board unchanged at one row of six (`396 × 64`).
+- **`Reverted:` the phone's folder expand dialog** (UI simplification, same day). A phone already gives the
+  folder its own tab and the whole remaining screen, so a 90 vh sheet over it was a second copy of a view the
+  user was already in. `mobile/MobileFolderList.tsx` lost its `Expand` button, its `expanded` state and the
+  `<MobileFolderOverlay>` render; `mobile/MobileFolderOverlay.tsx` and `mobile/MobileFlatList.tsx` were deleted
+  (they existed only for that sheet) along with the phone-only `.hub-overlay-sheet`,
+  `.hub-overlay-modes` and `.hub-search-overlay-phone` rules in `hub-phone.css`. The desk keeps its overlay
+  untouched. The phone panel is now exactly: header (name, count chip, change folder, unbind), breadcrumb, list,
+  footer — one scroller, no dialog.
+  Then the phone bar became **one row** — mark, wordmark, a 9 px `0.1.0-alpha` chip, the search field and the
+  theme toggle (`__APP_VERSION__`, defined by both Vite configs from `Lembaran.App/package.json`, so the version
+  is not typed twice) — and the stuck helper was fixed: `CountChip` replaced the span-with-`:focus` chip, so a
+  desk opens the tiles on hover (`@media (hover: hover)`) and a finger toggles them, with `pointerdown` outside
+  and Escape closing it. Verified at 390 × 844: bar children share one row (`tops 9/8/8`), version font 9 px,
+  tooltip `opacity 0` → tap → `1` (`is-open`) → outside tap → `0`.
+  Verified in Chromium (342 px pane, plus a 980 px iframe for the desktop layout): bar/tabs/sections
+  render, the palette computes to `#e6f0e7` ground / `#f2f8f1` surfaces / `#2c6a43` primary in pastel and
+  `#0f1712` / `#17231a` in dark, the bound folder **survived a reload** and listed 5 files
+  (`cities.csv`, `hello.docx`, `hello.pdf`, `hello.pptx`, `hello.xlsx`) with sizes and dates, clicking
+  `hello.pdf` opened the PDF reader with 2 pages inside the hub frame, and the dark theme propagates into
+  a reader's iframe. `npm run typecheck` and `npm test` pass (new `Lembaran/src/folders/entries.test.ts`).
+  Files: `Lembaran.UI/src/theme/{tokens.css,preference.ts,preference.test.ts,ThemeProvider.tsx,ThemeToggle.tsx}`,
+  `Lembaran.UI/src/components/{surface/surface.css,rail/rail.css}`,
+  `Lembaran.Pdf/src/presentations/pdf.css`, `Lembaran.Excel/src/presentations/excel.css`,
+  `Lembaran/src/{folders/**,handles/store.ts,index.ts}`, `Lembaran/package.json`,
+  `Lembaran.App/src/{App.tsx,presentations/**,feature/folder/**,feature/embed/**}`,
+  `AGENTS/{ARCHITECTURE,DEVNOTES,PLAN,LIMITATION,CHANGELOG}.md`.
+
+- **Cloud drives are named for a later version, and the seam they will use is documented** (design only,
+  no code). The user wants OneDrive and Google Drive accounts with live sync and, eventually, editing.
+  Recorded in [ARCHITECTURE.md](ARCHITECTURE.md) as a new § Cloud drives (planned, not built) and in
+  [PLAN.md](PLAN.md) § F as named work with unticked boxes; `0.1.0-alpha` stays a read-only local reader.
+  The decision that matters for today's code: **a drive is another `DocumentSource`, not another reader**.
+  It answers the same three questions as File System Access — give me the bytes, tell me if they changed,
+  take new bytes back — so the framework resolves a `{kind:'cloud'}` source into an OPFS copy exactly as
+  it resolves a picked file, and no reader or engine ever learns a provider exists. The rule that Lembaran
+  runs no server survives with one wording change: the only added endpoints are the provider's own API
+  origins (`connect-src` grows those and nothing else), so "no file leaves the device" becomes "none
+  leaves unless you connected a drive". Shape recorded for `Lembaran/src/cloud/`: OAuth 2.0 + PKCE in a
+  popup with no client secret, tokens in IndexedDB beside the handle records, delta polling (`/delta`,
+  `changes.list`) while the tab is visible instead of a push channel, and `write(bytes, etag)` where a
+  `412`/`409` is a conflict shown to the user, never a silent overwrite. Two questions are deliberately
+  left open for that version: **where the integrated file manager lives** (a Lembaran-side library across
+  local + both drives, or the provider's own picker with no local library) and **where a save lands** (in
+  place with `etag` conflicts, or a local OPFS copy plus an explicit upload). No file changed under `src/`.
+  Files: `AGENTS/{ARCHITECTURE,PLAN,LIMITATION,CHANGELOG,CHANGELOG-DEV}.md`.
+
+- **Standard fonts fall back to open substitutes, and CI now builds while Cloudflare Pages only hosts**
+  (feature + infrastructure). The four Microsoft core families are proprietary and are never bundled or
+  served, so 16 OFL-1.1 / Bitstream-Vera faces were vendored into `public/fonts/` — **Carlito**
+  (Calibri), **Liberation Sans** (Arial, Helvetica), **Liberation Serif** (Times New Roman, Times) and
+  **DejaVu Sans** (Verdana) — with `manifest.json` (family, faces, weight, style, copyright, source,
+  version, licence file), `README.txt` and `licenses/`. `Lembaran.UI/src/theme/fonts.css` aliases them
+  **under the document's own family names** (24 `@font-face` rules, `local()` first so an installed
+  original wins), which is what lets docx-preview's inline `font-family: Calibri` and a canvas
+  `ctx.font = '16px Arial'` resolve at all; `standardFonts.ts` exposes `loadStandardFonts()` (never
+  rejects) for the Word reader to await before `renderAsync` and for the Excel grid to repaint after.
+  PowerPoint paints in WASM and takes *bytes*, so `Lembaran.Pptx/src/feature/fonts/fonts.ts` fetches
+  faces and `openDeck` registers them with `handle.registerFont` — but only for the families the deck
+  names, read from `handle.snapshot()` before the first `layoutSlide`: fetching the whole set for every
+  deck was 4.1 MB gzip against 0.83 MB for an Arial-only deck, measured and fixed the same day.
+  DejaVu Sans is **not** metric-compatible with Verdana (the other three are), which is documented as a
+  limitation rather than hidden. `scripts/build-all.mjs` copies `public/fonts` to `dist/fonts`,
+  `gen-notices.mjs` adds a vendored-font section (13 notice entries: 9 dependencies + 4 families) and
+  `licenses-check.mjs` now fails when a face or its licence text disappears. `.github/workflows/build.yml`
+  runs `npm run gates` on every push and pull request with Node from `.nvmrc` (22), uploads `dist`, and
+  deploys that same artifact to Cloudflare Pages from `main` or `workflow_dispatch` via
+  `cloudflare/wrangler-action@v3` (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
+  `vars.CLOUDFLARE_PAGES_PROJECT || 'lembaran'`) — Pages never builds.
+  Verified in Chromium: `hello.docx` fetches exactly the 8 Liberation faces it needs
+  (`/fonts/LiberationSans-*.ttf`, `/fonts/LiberationSerif-*.ttf`) and renders 2 pages with the fixture
+  text; `hello.pptx` fetches only `/fonts/LiberationSans-*.ttf` (4 files, not 16) and paints slide 1 of 3
+  with no overlay; the hub's 24 alias faces are present and `unloaded` until used. `npm run typecheck`
+  and `npm run build` pass, `dist/fonts` and `dist/_headers` (`font-src 'self'`) ship.
+  Files: `public/fonts/**` (new), `Lembaran.UI/src/theme/{fonts.css,standardFonts.ts}`,
+  `Lembaran.UI/src/index.ts`, `Lembaran.Pptx/src/feature/fonts/**` (new),
+  `Lembaran.Pptx/src/feature/deck/deck.ts`, `Lembaran.Docs/src/feature/render/render.ts`,
+  `Lembaran.Excel/src/presentations/layout/viewport/GridCanvas.tsx`, `scripts/{build-all,gen-notices,
+  licenses-check}.mjs`, `.github/workflows/build.yml` (new), `.nvmrc` (new), `NOTICE`,
+  `AGENTS/{FRAMEWORK,DEVNOTES,PLAN,LIMITATION,CHANGELOG}.md`.
+
+- **Excel reads workbooks, and the hub's last "coming next" card is gone** (feature). `Lembaran.Excel`
+  composes `@betteroffice/xlsx@0.5.1` (Apache-2.0): `openWorkbook(bytes)` gives a synchronous handle,
+  `readCells({ranges: []})` the sheet catalog with visibility, `sheetInfo()` the active sheet's content
+  extent and frozen panes, `displayList({x,y,width,height})` the visible window and `paintDisplayList`
+  the canvas. The reader paints only that window: a native scroller holds a spacer the size of the sheet
+  and a sticky canvas repaints at the scroll offset on `requestAnimationFrame`; zoom builds the list at
+  `viewport / zoom` and paints at `dpr × zoom`; a click maps back through the same factor, and the
+  selected cell is read through `readCells` for the status line. Find uses `searchText` across sheets and
+  jumps by activating the sheet and scrolling to `cellPosition`. Hidden sheets are filtered from the
+  tabs, frozen panes come from the engine, `.xlsm` opens and its VBA never runs, `.xls` is rejected in
+  the prompt. Own GUI in `Lembaran.Excel/src/presentations/` with a `mobile/ExcelMobileShell` (sheet
+  stepping in the phone bar) and no shared chrome beyond `@lembaran/ui`.
+  Fixture: `samples/hello.xlsx`, generated by `scripts/make-sample-xlsx.mjs` — 3 visible sheets + 1
+  hidden, merged title, header fill, `COUNTA`/`SUM`/`AVERAGE`/`MAX` with cached values, a percentage
+  cell. Measured: JS **117.5 KB gzip**, CSS **2.6 KB**, WASM **7.58 MB → 2.91 MB gzip**; verified in
+  Chromium — tabs `Cities/Summary/Notes` with `Raw` hidden, `A1: City` on open, formulas read
+  `B3 5`, `B4 32275814`, `B5 727.87`, `B6 43.25%`, find "Tokyo" → `1 of 2` on Cities A6 then Summary A9,
+  a 500-row workbook scrolls 9,484 px in a 656 px viewport and repaints the window with the header row
+  and first column pinned (frozen pane at `scrollTop` 3000), the built site on a plain static server
+  opens the same fixture with its WASM fetched from `/xlsx/assets/`, and at 360 px the phone shell
+  shows its sheet bar. `npm run gates` passes; notices now list 9 dependencies.
+  Files: `Lembaran.Excel/**` (new), `scripts/make-sample-xlsx.mjs`, `samples/hello.xlsx`,
+  `Lembaran.App/src/presentations/component/ReaderCard.tsx` ("Open an Excel file"),
+  `Lembaran.App/src/feature/choose/registry.generated.ts`, `package.json` (+`@betteroffice/xlsx`,
+  `jszip` dev), `package-lock.json`, notices, `AGENTS/{FRAMEWORK,LIMITATION,PLAN,DEVNOTES}.md`.
+
+- **Site-root assets moved to the repository's `public/`** (build). `_headers` (COOP/COEP/CSP) used to
+  live in `Lembaran.App/public/`, while the fonts live in `public/fonts/`; Vite then warned 16 times per
+  build that `url('/fonts/…')` in `fonts.css` "didn't resolve at build time". Both now sit in
+  `public/`: the hub sets `publicDir` to it and keeps copying into the site root, while the five readers
+  set the same `publicDir` with `build.copyPublicDir: false` so they resolve the URLs quietly and never
+  copy 8.2 MB of faces into their own folder. `npm run build` is now warning-free.
+  `Moved: Lembaran.App/public/_headers → public/_headers` (the note in the 2026-11-24 `_headers` entry
+  above points at the old path).
+  Files: `public/_headers`, `Lembaran.App/public/` (removed), `Lembaran.App/vite.config.ts`,
+  `Lembaran.{Csv,Docs,Excel,Pdf,Pptx}/vite.config.ts`.
+
 - **The version is `0.1.0-alpha`** (release metadata). Every manifest (root + 7 workspaces) carries the
   prerelease id, `package-lock.json` was resynced from them, and `npm run notices` regenerated
   `ownLicense.version` from the manifest rather than a literal. The heading the user reads

@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { listRecent, type RecentEntry } from '@lembaran/framework';
+import { forget, listRecent, type RecentEntry } from '@lembaran/framework';
 
-export function useRecents(): { recents: RecentEntry[]; refresh(): void } {
+export function useRecents(): {
+  recents: RecentEntry[];
+  refresh(): void;
+  remove(id: string): void;
+} {
   const [recents, setRecents] = useState<RecentEntry[]>([]);
 
   const refresh = useCallback(() => {
@@ -10,9 +14,19 @@ export function useRecents(): { recents: RecentEntry[]; refresh(): void } {
       .catch(() => setRecents([]));
   }, []);
 
+  // dropping a recent is a one-click action with nothing to lose: the file on disk is untouched
+  const remove = useCallback(
+    (id: string) => {
+      void forget(id)
+        .then(refresh)
+        .catch(refresh);
+    },
+    [refresh],
+  );
+
   useEffect(() => {
     refresh();
   }, [refresh]);
 
-  return { recents, refresh };
+  return { recents, refresh, remove };
 }

@@ -6,7 +6,7 @@
   width: fit-content;
   max-width: 100%;
   margin: 0 auto;
-  background: #fff;
+  background: var(--lb-paper);
   border-radius: 2px;
   outline: 1px solid var(--lb-border);
   box-shadow: var(--lb-shadow);

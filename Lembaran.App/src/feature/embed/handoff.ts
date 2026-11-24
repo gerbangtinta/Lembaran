@@ -4,8 +4,10 @@ import {
   ingest,
   pickFileFallback,
   pickFileHandle,
+  readFolderFile,
   readHandleBytes,
   remember,
+  type FolderFile,
 } from '@lembaran/framework';
 import type { ReaderEntry } from '../choose';
 
@@ -65,6 +67,25 @@ export async function handoffFromFile(file: File, reader: ReaderEntry): Promise<
     openedAt: Date.now(),
   });
   return { reader, path: ingested.path, name: file.name };
+}
+
+/**
+ * A file the bound folder offered. Same handoff as a picked file: copy to OPFS, remember it, open by
+ * path — and keep the file handle when the listing has one, so the entry points back at the disk copy.
+ */
+export async function handoffFromFolderFile(entry: FolderFile, reader: ReaderEntry): Promise<Handoff> {
+  const mime = reader.mimeTypes[0] ?? 'application/octet-stream';
+  const ingested = await ingest(await readFolderFile(entry), entry.name, mime);
+  await remember({
+    id: ingested.hash,
+    name: entry.name,
+    mime,
+    size: ingested.size,
+    path: ingested.path,
+    ...(entry.handle ? { handle: entry.handle } : {}),
+    openedAt: Date.now(),
+  });
+  return { reader, path: ingested.path, name: entry.name };
 }
 
 export function frameUrl(handoff: Handoff): string {

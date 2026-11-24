@@ -31,6 +31,15 @@ export const BUILT_READERS: BuiltReader[] = [
     mimeTypes: ['application/vnd.openxmlformats-officedocument.presentationml.presentation'],
   },
   {
+    id: 'xlsx',
+    folder: 'Lembaran.Excel',
+    slug: 'xlsx',
+    name: 'Excel',
+    blurb: 'Sheet tabs and a painted grid, with formulas calculated on this device.',
+    extensions: ['xlsx', 'xlsm'],
+    mimeTypes: ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel.sheet.macroEnabled.12'],
+  },
+  {
     id: 'csv',
     folder: 'Lembaran.Csv',
     slug: 'csv',

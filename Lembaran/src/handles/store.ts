@@ -13,12 +13,24 @@ export interface RecentEntry {
   openedAt: number;
 }
 
+/** The one folder the user bound, kept so the next session can list it again. */
+export interface BoundFolder {
+  /** always `'bound'`: the hub remembers one folder, not a tree of them */
+  id: string;
+  name: string;
+  handle: FileSystemDirectoryHandle;
+  boundAt: number;
+}
+
 class LembaranDb extends Dexie {
   recent!: Table<RecentEntry, string>;
+  folders!: Table<BoundFolder, string>;
 
   constructor() {
     super('lembaran');
     this.version(1).stores({ recent: 'id, openedAt, name' });
+    // v2: the bound folder lives beside the recents, so a reload can list it again
+    this.version(2).stores({ recent: 'id, openedAt, name', folders: 'id, boundAt' });
   }
 }
 

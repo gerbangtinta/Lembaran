@@ -1,4 +1,5 @@
 import { renderAsync } from 'docx-preview';
+import { loadStandardFonts } from '@lembaran/ui';
 
 export interface RenderResult {
   pages: number;
@@ -16,6 +17,9 @@ export async function renderDocx(bytes: Uint8Array, host: HTMLElement): Promise<
     bytes.byteOffset,
     bytes.byteOffset + bytes.byteLength,
   ) as ArrayBuffer;
+
+  // measure with the same faces the pages will use, or pagination shifts when a face arrives late
+  await loadStandardFonts().catch(() => undefined);
 
   host.replaceChildren();
   await renderAsync(data, host, host, {

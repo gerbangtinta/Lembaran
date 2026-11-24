@@ -29,3 +29,11 @@ Notably:
 
 No file leaves the device: this application makes no network request at runtime
 other than for its own assets.
+
+Typeface substitutes: the Microsoft core fonts (Calibri, Arial, Helvetica, Times New Roman, Times,
+Verdana) are proprietary and are neither bundled nor served. Where a document asks for one of them,
+Lembaran draws an open-licensed substitute it ships itself — Carlito (Calibri), Liberation Sans
+(Arial, Helvetica), Liberation Serif (Times New Roman, Times) and DejaVu Sans (Verdana) — under the
+document's own family name. Their licences are OFL-1.1 and the Bitstream Vera licence; the full texts
+are in public/fonts/licenses/ and LICENSES/, and the face list with copyright holders is in
+public/fonts/manifest.json.

@@ -9,6 +9,11 @@ import react from '@vitejs/plugin-react';
 // exactly as `/` does in production.
 const root = import.meta.dirname;
 
+// the same number the build bakes in, so dev and production print one version
+const { version } = JSON.parse(
+  readFileSync(join(root, 'Lembaran.App', 'package.json'), 'utf8'),
+) as { version: string };
+
 interface ReaderRoute {
   folder: string;
   slug: string;
@@ -75,6 +80,7 @@ export default defineConfig(() => {
   const known = readers();
   return {
     root,
+    define: { __APP_VERSION__: JSON.stringify(version) },
     plugins: [react(), shortLinks(known), urls(known)],
     resolve: { dedupe: ['react', 'react-dom'] },
     // Pre-bundled once, so a page load does not trigger a re-optimize (which reloads everything).

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { readSource, type DocumentSource } from '@lembaran/framework';
-import { EmptyState, useFullscreen, useIsMobile } from '@lembaran/ui';
+import { EmptyState, onZoomRequest, useFullscreen, useIsMobile } from '@lembaran/ui';
 import { openFromDisk } from './feature/open';
 import { renderDocx } from './feature/render';
 import { activateHit, clearHighlights, highlightHits, stepHit as nextHit } from './feature/find';
@@ -100,6 +100,7 @@ export function DocsApp({ source = null }: Props) {
     }
   }, []);
 
+
   const zoomIn = useCallback(() => {
     setFit(false);
     setZoom((value) => stepZoom(value, 1));
@@ -109,6 +110,9 @@ export function DocsApp({ source = null }: Props) {
     setFit(false);
     setZoom((value) => stepZoom(value, -1));
   }, []);
+
+  // Ctrl + wheel re-lays the page at the new scale instead of scaling the app around it
+  useEffect(() => onZoomRequest((direction) => (direction === 1 ? zoomIn() : zoomOut())), [zoomIn, zoomOut]);
 
   const fitNow = useCallback(() => setFit(true), []);
 

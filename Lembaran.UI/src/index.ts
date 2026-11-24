@@ -5,6 +5,18 @@
 export { ThemeProvider, useTheme } from './theme/ThemeProvider';
 export { ThemeToggle } from './theme/ThemeToggle';
 export {
+  getScale,
+  installAppScale,
+  onZoomRequest,
+  resetScale,
+  setScale,
+  stepScale,
+  subscribeScale,
+  useAppScale,
+  ZOOM_REQUEST,
+} from './theme/appScale';
+export { STANDARD_FAMILIES, loadStandardFonts } from './theme/standardFonts';
+export {
   DEFAULT_THEME,
   isPreference,
   nextPreference,

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { RecentEntry } from '@lembaran/framework';
+import type { FolderFile, RecentEntry } from '@lembaran/framework';
 import { useIsMobile } from '@lembaran/ui';
 import { READERS, readerForFileName, type ReaderEntry, type ReaderId } from './feature/choose';
+import { useBoundFolder } from './feature/folder';
 import {
   clearOpenDocument,
   frameUrl,
   handoffFromFile,
+  handoffFromFolderFile,
   loadOpenDocument,
   openForReader,
   saveOpenDocument,
@@ -24,10 +26,12 @@ function restore(): Handoff | null {
   return reader ? { reader, path: open.path, name: open.name } : null;
 }
 
-export function HubApp() {  const [handoff, setHandoff] = useState<Handoff | null>(useMemo(restore, []));
+export function HubApp() {
+  const [handoff, setHandoff] = useState<Handoff | null>(useMemo(restore, []));
   const [busyId, setBusyId] = useState<ReaderId | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { recents, refresh } = useRecents();
+  const { recents, refresh, remove: removeRecent } = useRecents();
+  const folder = useBoundFolder();
   const mobile = useIsMobile();
 
   // a reload — including the full reload Vite sends when a reader's entry module changes —
@@ -76,6 +80,27 @@ export function HubApp() {  const [handoff, setHandoff] = useState<Handoff | nul
     setHandoff({ reader, path: recent.path, name: recent.name });
   }, []);
 
+  const openFolderFile = useCallback(
+    async (file: FolderFile) => {
+      const reader = readerForFileName(file.name);
+      if (!reader || !reader.available) {
+        setError(`${file.name}: no reader for that file type.`);
+        return;
+      }
+      setBusyId(reader.id);
+      setError(null);
+      try {
+        setHandoff(await handoffFromFolderFile(file, reader));
+        refresh();
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : String(reason));
+      } finally {
+        setBusyId(null);
+      }
+    },
+    [refresh],
+  );
+
   const dropFiles = useCallback(
     async (files: FileList) => {
       const file = files[0];
@@ -99,7 +124,7 @@ export function HubApp() {  const [handoff, setHandoff] = useState<Handoff | nul
     return (
       <ReaderFrame
         url={frameUrl(handoff)}
-        title={`${handoff.reader.name} — ${handoff.name}`}
+        title={handoff.name}
         onClose={() => setHandoff(null)}
       />
     );
@@ -110,8 +135,11 @@ export function HubApp() {  const [handoff, setHandoff] = useState<Handoff | nul
     recents,
     busyId,
     error,
+    folder,
     onLaunch: (entry: ReaderEntry) => void launch(entry),
     onOpenRecent: openRecent,
+    onRemoveRecent: removeRecent,
+    onOpenFolderFile: (file: FolderFile) => void openFolderFile(file),
     onDismissError: () => setError(null),
   };
 

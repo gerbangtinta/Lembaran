@@ -74,7 +74,7 @@
   display: block;
   width: 100%;
   height: auto;
-  background: #fff;
+  background: var(--lb-paper);
   border-radius: 3px;
 }
 
@@ -82,14 +82,14 @@
 .lb-panel-card canvas[data-state='pending'] {
   background: repeating-linear-gradient(
     100deg,
-    color-mix(in srgb, var(--lb-text) 5%, #fff) 0 12px,
-    color-mix(in srgb, var(--lb-text) 9%, #fff) 12px 24px
+    color-mix(in srgb, var(--lb-text) 6%, var(--lb-surface)) 0 12px,
+    color-mix(in srgb, var(--lb-text) 11%, var(--lb-surface)) 12px 24px
   );
   animation: lb-shimmer 1.4s linear infinite;
 }
 
 .lb-panel-card canvas[data-state='failed'] {
-  background: #fff;
+  background: var(--lb-surface-2);
   outline: 1px dashed var(--lb-danger);
   outline-offset: -1px;
 }
@@ -112,5 +112,5 @@
   height: 7px;
   border-radius: 50%;
   background: var(--lb-accent);
-  box-shadow: 0 0 0 2px #fff;
+  box-shadow: 0 0 0 2px var(--lb-surface);
 }

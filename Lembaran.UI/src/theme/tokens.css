@@ -1,15 +1,28 @@
-:root {
-  color-scheme: light dark;
+@import './fonts.css';
 
-  --lb-bg: #fbfaf8;
-  --lb-surface: #ffffff;
-  --lb-surface-2: #f1efec;
-  --lb-border: #d9d5cf;
-  --lb-text: #1d1b19;
-  --lb-text-dim: #6b655e;
-  --lb-accent: #8a5a2b;
-  --lb-accent-contrast: #ffffff;
-  --lb-danger: #a33228;
+/*
+ * Pastel green is the app, not an option: a leaf-tinted ground, a darker green to act with, and clay
+ * to point at things. Nothing in the chrome is pure white — `--lb-paper` is the single exception and
+ * it means "the sheet a document is drawn on", so a page or a slide keeps the colour the file says.
+ */
+:root,
+[data-theme='pastel'] {
+  color-scheme: light;
+
+  --lb-bg: #e6f0e7;
+  --lb-surface: #f2f8f1;
+  --lb-surface-2: #dbe9da;
+  --lb-border: #c2d7c4;
+  --lb-border-strong: #a2c1a7;
+  --lb-text: #13251a;
+  --lb-text-dim: #4a6555;
+  --lb-accent: #2c6a43;
+  --lb-accent-strong: #1d4c2f;
+  --lb-accent-contrast: #f1f9f1;
+  --lb-accent-2: #b06a4a;
+  --lb-accent-2-contrast: #fdf3ee;
+  --lb-danger: #9b3f32;
+  --lb-paper: #ffffff;
 
   --lb-radius: 10px;
   --lb-gap: 12px;
@@ -18,37 +31,38 @@
   --lb-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --lb-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  --lb-shadow: 0 1px 2px rgb(0 0 0 / 8%), 0 8px 24px rgb(0 0 0 / 6%);
-}
-
-[data-theme='pastel'] {
-  color-scheme: light;
-
-  --lb-bg: #f1f7f2;
-  --lb-surface: #ffffff;
-  --lb-surface-2: #e4efe6;
-  --lb-border: #cddfd1;
-  --lb-text: #1e2a22;
-  --lb-text-dim: #5c6f62;
-  --lb-accent: #5f9d6d;
-  --lb-accent-contrast: #ffffff;
-  --lb-danger: #a33228;
-
-  --lb-shadow: 0 1px 2px rgb(30 42 34 / 8%), 0 8px 24px rgb(30 42 34 / 6%);
+  --lb-shadow: 0 1px 2px rgb(19 37 26 / 8%), 0 10px 28px rgb(19 37 26 / 8%);
+  --lb-shadow-sm: 0 1px 2px rgb(19 37 26 / 10%);
 }
 
 [data-theme='dark'] {
-  --lb-bg: #141312;
-  --lb-surface: #1c1a19;
-  --lb-surface-2: #242120;
-  --lb-border: #353130;
-  --lb-text: #f2eeea;
-  --lb-text-dim: #a49c94;
-  --lb-accent: #d9a166;
-  --lb-accent-contrast: #1a1512;
-  --lb-danger: #e3796d;
+  color-scheme: dark;
 
-  --lb-shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 30%);
+  --lb-bg: #0f1712;
+  --lb-surface: #17231b;
+  --lb-surface-2: #213026;
+  --lb-border: #2c3f33;
+  --lb-border-strong: #3f5849;
+  --lb-text: #e8f1e9;
+  --lb-text-dim: #9db3a4;
+  --lb-accent: #7fc39a;
+  --lb-accent-strong: #a4d7b6;
+  --lb-accent-contrast: #0c1610;
+  --lb-accent-2: #d08a68;
+  --lb-accent-2-contrast: #1a120e;
+  --lb-danger: #e08a7c;
+  /* a page is still paper: the one place a document keeps its own colour */
+  --lb-paper: #ffffff;
+
+  --lb-radius: 10px;
+  --lb-gap: 12px;
+  --lb-tap: 44px;
+  --lb-control: 32px;
+  --lb-font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --lb-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --lb-shadow: 0 1px 2px rgb(0 0 0 / 45%), 0 10px 28px rgb(0 0 0 / 35%);
+  --lb-shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
 }
 
 * {
@@ -66,7 +80,11 @@ body {
 }
 
 #root {
-  height: 100dvh;
+  /* Ctrl/⌘ + wheel scales the app, not the browser: the root takes the viewport back at any scale, so
+     a raise never pushes the shell past the window and a reader inside it is scaled exactly once. */
+  width: calc(100vw / var(--lb-app-scale, 1));
+  height: calc(100dvh / var(--lb-app-scale, 1));
+  zoom: var(--lb-app-scale, 1);
 }
 
 button {
@@ -119,4 +137,95 @@ button:disabled {
 :focus-visible {
   outline: 2px solid var(--lb-accent);
   outline-offset: 2px;
+}
+
+/* ---- shared controls: one vocabulary so every front-end looks like the same app ---- */
+
+/* The one filled button on a screen: an action that changes something. */
+.lb-primary {
+  border-color: transparent;
+  background: var(--lb-accent);
+  color: var(--lb-accent-contrast);
+  font-weight: 550;
+}
+
+.lb-primary:hover:not(:disabled) {
+  background: var(--lb-accent-strong);
+}
+
+.lb-primary:active:not(:disabled) {
+  background: var(--lb-accent-strong);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 18%);
+}
+
+/* Quiet button: reads as text until hovered, for the second-most-likely action in a row. */
+.lb-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--lb-text-dim);
+}
+
+.lb-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lb-text) 7%, transparent);
+  color: var(--lb-text);
+}
+
+/* Clay marks the thing you are pointing at, never the thing you commit to. */
+.lb-marker {
+  border-color: color-mix(in srgb, var(--lb-accent-2) 55%, var(--lb-border));
+  background: color-mix(in srgb, var(--lb-accent-2) 14%, var(--lb-surface));
+  color: color-mix(in srgb, var(--lb-accent-2) 78%, var(--lb-text));
+}
+
+/* A tag: extensions, counts, the version. Mono, small, no colour of its own. */
+.lb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border: 1px solid var(--lb-border);
+  border-radius: 999px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text-dim);
+  font-family: var(--lb-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Section label: the small caps line above a group of things. */
+.lb-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--lb-text-dim);
+}
+
+.lb-field {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--lb-border);
+  border-radius: var(--lb-radius);
+  background: var(--lb-surface);
+  color: var(--lb-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.lb-field::placeholder {
+  color: color-mix(in srgb, var(--lb-text-dim) 80%, transparent);
+}
+
+.lb-field:focus {
+  outline: 2px solid color-mix(in srgb, var(--lb-accent) 55%, transparent);
+  outline-offset: 1px;
+  border-color: var(--lb-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+  }
 }

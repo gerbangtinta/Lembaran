@@ -23,8 +23,14 @@ export function ReaderFrame({ url, title, onClose }: Props) {
   return (
     <div className="hub-frame-wrap">
       <div className="hub-frame-bar">
-        <button type="button" onClick={onClose}>
-          ‹ All readers
+        <button
+          type="button"
+          className="hub-frame-back"
+          onClick={onClose}
+          title="All readers"
+          aria-label="All readers"
+        >
+          ‹
         </button>
         <span className="hub-frame-title" title={title}>
           {title}

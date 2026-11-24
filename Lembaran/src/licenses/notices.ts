@@ -8,6 +8,7 @@ export interface NoticeEntry {
 
 export const notices: NoticeEntry[] = [
   { name: '@betteroffice/pptx', version: '0.5.1', license: 'Apache-2.0', url: 'https://github.com/openooxml/betteroffice' },
+  { name: '@betteroffice/xlsx', version: '0.5.1', license: 'Apache-2.0', url: 'https://github.com/openooxml/betteroffice' },
   { name: 'comlink', version: '4.4.2', license: 'Apache-2.0', url: 'https://github.com/GoogleChromeLabs/comlink' },
   { name: 'dexie', version: '4.4.7', license: 'Apache-2.0', url: 'https://github.com/dexie/Dexie.js' },
   { name: 'docx-preview', version: '0.4.1', license: 'Apache-2.0', url: 'https://github.com/VolodymyrBaydalka/docxjs' },
@@ -15,6 +16,10 @@ export const notices: NoticeEntry[] = [
   { name: 'pdfjs-dist', version: '6.5.438', license: 'Apache-2.0', url: 'https://github.com/mozilla/pdf.js' },
   { name: 'react', version: '19.3.1', license: 'MIT', url: 'https://github.com/react/react' },
   { name: 'react-dom', version: '19.3.1', license: 'MIT', url: 'https://github.com/react/react' },
+  { name: 'Carlito (Calibri substitute)', version: '1.104', license: 'OFL-1.1', url: 'https://github.com/googlefonts/carlito' },
+  { name: 'Liberation Sans (Arial, Helvetica substitute)', version: '2.1.5', license: 'OFL-1.1', url: 'https://github.com/liberationfonts/liberation-fonts' },
+  { name: 'Liberation Serif (Times New Roman, Times substitute)', version: '2.1.5', license: 'OFL-1.1', url: 'https://github.com/liberationfonts/liberation-fonts' },
+  { name: 'DejaVu Sans (Verdana substitute)', version: '2.37', license: 'Bitstream-Vera', url: 'https://dejavu-fonts.github.io/' },
 ];
 
 export const ownLicense = { name: 'Lembaran', version: '0.1.0-alpha', license: 'GPL-3.0-only', source: null };

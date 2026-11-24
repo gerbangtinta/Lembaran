@@ -1,7 +1,7 @@
 // Fails when a dependency is not recorded, its license text is missing, or copyleft
 // arrived without a decision. Runs as `npm run licenses:check`.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const FRAMEWORK = readFileSync(join(ROOT, 'AGENTS', 'FRAMEWORK.md'), 'utf8');
@@ -91,6 +91,21 @@ for (const name of dependencies) {
     const adrs = existsSync(ADR_DIR) ? readdirSync(ADR_DIR).join(' ') : '';
     if (!adrs.includes('copyleft')) {
       failures.push(`${name}: ${license} needs an ADR in docs/adr before merge`);
+    }
+  }
+}
+
+// vendored fonts are not npm dependencies: each face and its licence must exist where it is served
+const FONTS_DIR = join(ROOT, 'public', 'fonts');
+if (existsSync(join(FONTS_DIR, 'manifest.json'))) {
+  const manifest = JSON.parse(readFileSync(join(FONTS_DIR, 'manifest.json'), 'utf8'));
+  for (const family of manifest.families ?? []) {
+    const served = join(FONTS_DIR, family.licenseText);
+    const recorded = join(LICENSES_DIR, basename(family.licenseText));
+    if (!existsSync(served)) failures.push(`font ${family.family}: ${family.licenseText} is missing beside the files`);
+    if (!existsSync(recorded)) failures.push(`font ${family.family}: LICENSES/${basename(family.licenseText)} is missing`);
+    for (const face of family.faces ?? []) {
+      if (!existsSync(join(FONTS_DIR, face.file))) failures.push(`font ${family.family}: ${face.file} is missing`);
     }
   }
 }

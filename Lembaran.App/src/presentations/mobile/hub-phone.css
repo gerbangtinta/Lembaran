@@ -1,15 +1,321 @@
-/* Hub phone only: a list, not a grid. Imported by HubMobileShell. */
+/* Hub phone only: one column, one section at a time, everything within a thumb reach.
+   Never merged into hub.css — a phone is its own layout file. */
 
-.hub-shell-phone .hub-header p {
-  margin-bottom: 16px;
+/* the shell does not scroll as a page: the active section owns the height and scrolls inside itself */
+.hub-shell-phone {
+  overflow: hidden;
+}
+
+.hub-shell-phone .hub-bar {
+  gap: 8px;
+  padding: 8px 14px 6px;
+}
+
+.hub-shell-phone .hub-brand {
+  gap: 6px;
+}
+
+.hub-shell-phone .hub-word {
+  font-size: 13.5px;
+}
+
+/* the version travels with the wordmark; smaller here, because the bar holds more on a phone */
+.hub-version {
+  padding: 1px 6px;
+  font-size: 9px;
+  letter-spacing: 0;
+}
+
+/* the theme toggle sits at the far end of the bar, not glued to the wordmark */
+.hub-shell-phone .hub-bar-actions {
+  margin-left: 0;
+  flex: none;
+}
+
+/* the search box shares the top row: it filters readers and folder files the same way */
+.hub-search-phone {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-surface);
+  color: var(--lb-text-dim);
+}
+
+.hub-search-phone:focus-within {
+  border-color: var(--lb-accent);
+}
+
+.hub-search-phone .lb-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12.5px;
+}
+
+.hub-search-phone .lb-field:focus {
+  outline: none;
+}
+
+.hub-shell-phone .hub-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  gap: 0;
+  padding: 14px 14px 8px;
+  overflow: hidden;
+}
+
+.hub-shell-phone .hub-main > section {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 8px;
+}
+
+/* the folder pane never scrolls: its list does, and only its list */
+.hub-shell-phone .hub-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hub-folder-pane {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.hub-browse-pane {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.hub-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 14px 0;
+  border-bottom: 1px solid var(--lb-border);
+  background: var(--lb-bg);
+  flex: none;
+}
+
+.hub-tab {
+  flex: 1;
+  min-height: 38px;
+  padding: 0 8px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--lb-text-dim);
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.hub-tab.is-on {
+  border-bottom-color: var(--lb-accent);
+  color: var(--lb-text);
+}
+
+.hub-tab:hover:not(.is-on) {
+  background: transparent;
+  color: var(--lb-text);
+}
+
+.hub-shell-phone .hub-intro,
+.hub-shell-phone .hub-foot,
+.hub-shell-phone .hub-search,
+.hub-shell-phone .hub-grid {
+  display: none;
 }
 
 .hub-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .hub-list .hub-card {
   padding: 14px;
+}
+
+.hub-list .hub-card:hover {
+  transform: none;
+}
+
+/* a file row is a card with two lines, not a table */
+.hub-file-card {
+  width: 100%;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.hub-shell-phone .hub-invite {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 16px;
+}
+
+.hub-shell-phone .hub-invite-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hub-shell-phone .hub-invite-actions > button {
+  flex: 1;
+}
+
+.hub-shell-phone .hub-invite > button {
+  width: 100%;
+}
+
+.hub-shell-phone .hub-folder-head {
+  padding-bottom: 4px;
+}
+
+.hub-shell-phone .hub-folder-actions {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.hub-shell-phone .hub-confirm {
+  padding: 2px;
+}
+
+.hub-shell-phone .hub-confirm > span {
+  display: none;
+}
+
+/* crumbs scroll sideways on a phone instead of wrapping into three lines */
+.hub-crumbs-phone {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 8px;
+  scrollbar-width: none;
+}
+
+.hub-crumbs-phone::-webkit-scrollbar {
+  display: none;
+}
+
+/* the folder list fills the pane; a thumb-scrollbar, thin and quiet */
+.hub-browse-phone {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.hub-browse-phone .hub-row {
+  min-height: 52px;
+  padding: 0 12px;
+}
+
+.hub-shell-phone .hub-row-chevron {
+  color: var(--lb-text-dim);
+  font-size: 17px;
+}
+
+/* a file row on a phone is a two-line card, not the desk's grid row */
+.hub-file-card {
+  width: 100%;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.hub-file-card:hover {
+  transform: none;
+}
+
+.hub-file-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-file-meta {
+  font-size: 11.5px;
+  color: var(--lb-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* folder rows on a phone: the icons come down a little, the desk keeps its size */
+.hub-shell-phone .hub-icon-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.hub-shell-phone .hub-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.hub-shell-phone .hub-row-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hub-shell-phone .hub-count {
+  min-height: 24px;
+  font-size: 11px;
+  padding: 3px 9px;
+}
+
+/* the tile helper on a phone: a narrow two-tile board that wraps, so it hugs its tiles and never
+   stretches into empty columns or off the screen */
+.hub-shell-phone .hub-tip {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(2, minmax(58px, max-content));
+  width: max-content;
+  max-width: calc(100vw - 28px);
+}
+
+.hub-shell-phone .hub-tip-value {
+  font-size: 14px;
+}
+
+.hub-shell-phone .hub-recent-x {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 17px;
+  opacity: 0.8;
+}
+
+.hub-shell-phone .hub-recent {
+  min-height: 44px;
+  background: var(--lb-surface);
+  border-color: var(--lb-border);
 }

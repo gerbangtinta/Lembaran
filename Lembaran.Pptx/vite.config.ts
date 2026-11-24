@@ -8,7 +8,10 @@ export default defineConfig({
   resolve: { dedupe: ['react', 'react-dom'] },
   // the engine's 6 MB WASM must be served, hashed and cached like any other asset
   assetsInclude: ['**/*.wasm'],
+  // `/fonts/*` is copied to `dist/fonts` once by scripts/build-all.mjs; see Lembaran.Docs.
+  publicDir: resolve(import.meta.dirname, '../public'),
   build: {
+    copyPublicDir: false,
     outDir: resolve(import.meta.dirname, '../dist/pptx'),
     emptyOutDir: true,
   },

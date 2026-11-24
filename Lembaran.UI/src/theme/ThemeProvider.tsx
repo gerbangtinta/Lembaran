@@ -1,6 +1,7 @@
 ﻿import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { ThemePreference } from '@lembaran/framework';
-import { DEFAULT_THEME, isPreference } from './preference';
+import { DEFAULT_THEME, isPreference, normalisePreference } from './preference';
+import { installAppScale } from './appScale';
 
 interface ThemeState {
   theme: ThemePreference;
@@ -20,7 +21,7 @@ const ThemeContext = createContext<ThemeState>({
 function readStored(): ThemePreference {
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (isPreference(stored)) return stored;
+    if (isPreference(stored)) return normalisePreference(stored);
   } catch {
     // a disabled store is not a reason to fail: fall through to the default
   }
@@ -34,12 +35,16 @@ export function ThemeProvider({
   initial?: ThemePreference;
   children: ReactNode;
 }) {
-  const [theme, setThemeState] = useState<ThemePreference>(initial ?? readStored);
+  const [theme, setThemeState] = useState<ThemePreference>(() =>
+    initial ? normalisePreference(initial) : readStored(),
+  );
 
   // a reader runs in its own iframe: one toggle should still change the whole app
   useEffect(() => {
     const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY && isPreference(event.newValue)) setThemeState(event.newValue);
+      if (event.key === STORAGE_KEY && isPreference(event.newValue)) {
+        setThemeState(normalisePreference(event.newValue));
+      }
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
@@ -47,15 +52,19 @@ export function ThemeProvider({
 
   const setTheme = useMemo(
     () => (next: ThemePreference) => {
-      setThemeState(next);
+      const chosen = normalisePreference(next);
+      setThemeState(chosen);
       try {
-        window.localStorage.setItem(STORAGE_KEY, next);
+        window.localStorage.setItem(STORAGE_KEY, chosen);
       } catch {
         // the preference will not survive a reload; this session still follows it
       }
     },
     [],
   );
+
+  // the app's own scale, and the Ctrl+wheel handler that drives it, live beside the theme
+  useEffect(() => installAppScale(), []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;

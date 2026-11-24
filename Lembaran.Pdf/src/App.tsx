@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DocumentSource } from '@lembaran/framework';
-import { useIsMobile } from '@lembaran/ui';
+import { onZoomRequest, useIsMobile } from '@lembaran/ui';
 import { useAnnotations } from './feature/annotate';
 import { useFullscreen } from '@lembaran/ui';
 import { openFromDisk, usePdfDocument } from './feature/open';
@@ -96,6 +96,10 @@ export function PdfApp({ source = null, assetBase, apiRef }: Props) {
 
   const zoomIn = useCallback(() => setZoom((value) => nextZoom(value)), []);
   const zoomOut = useCallback(() => setZoom((value) => previousZoom(value)), []);
+
+  // Ctrl + wheel re-renders the page at the new raster scale, instead of scaling the canvas and blurring it
+  useEffect(() => onZoomRequest((direction) => (direction === 1 ? zoomIn() : zoomOut())), [zoomIn, zoomOut]);
+
   const fit = useCallback(() => viewportApi.current?.fitWidth(), []);
   const applyFit = useCallback((next: number) => setZoom(next), []);
   const toggleSearch = useCallback(() => setSearchOpen((open_) => !open_), []);

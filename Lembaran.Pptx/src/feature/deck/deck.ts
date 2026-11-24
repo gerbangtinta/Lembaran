@@ -5,11 +5,14 @@ import {
   paintSlide,
   sizeCanvasForSlide,
   type CanvasImageResolver,
+  type DeckSnapshot,
   type PresentationHandle,
+  type ShapeSnapshot,
 } from '@betteroffice/pptx';
 // The package's `exports` map hides its own WASM file, so it is imported by path: Vite serves it
 // in development and emits a content-hashed asset in the build, which keeps it self-hosted.
 import wasmUrl from '../../../../node_modules/@betteroffice/pptx/dist/generated/pptx_wasm_bg.wasm?url';
+import { standardFonts } from '../fonts';
 
 let ready: Promise<void> | null = null;
 
@@ -31,6 +34,8 @@ export async function openDeck(bytes: Uint8Array): Promise<Deck> {
   await ensureWasm();
   const handle = openPresentation(bytes);
   const snapshot = handle.snapshot();
+  // registered under the document's own family names, so Calibri keeps Calibri's metrics
+  for (const face of await standardFonts(namedFamilies(snapshot))) handle.registerFont(face);
   const first = handle.layoutSlide(0);
   return {
     handle,
@@ -38,6 +43,25 @@ export async function openDeck(bytes: Uint8Array): Promise<Deck> {
     width: first.width,
     height: first.height,
   };
+}
+
+/** Every typeface the deck names, so only the substitutes it can use are downloaded. */
+function namedFamilies(snapshot: DeckSnapshot): string[] {
+  const families = new Set<string>();
+  const visit = (shapes: readonly ShapeSnapshot[]): void => {
+    for (const shape of shapes) {
+      for (const story of shape.textStories) {
+        for (const paragraph of story.paragraphs) {
+          for (const run of paragraph.runs) {
+            if (run.style.fontFamily) families.add(run.style.fontFamily);
+          }
+        }
+      }
+      visit(shape.children);
+    }
+  };
+  for (const slide of snapshot.slides) visit(slide.shapes);
+  return [...families];
 }
 
 /** Paints one slide at `scale`, device pixel ratio included. */

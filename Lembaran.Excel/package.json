@@ -1,0 +1,29 @@
+{
+  "name": "@lembaran/excel",
+  "version": "0.1.0-alpha",
+  "private": true,
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "lembaran": {
+    "id": "xlsx",
+    "slug": "xlsx",
+    "name": "Excel",
+    "blurb": "Sheet tabs and a painted grid, with formulas calculated on this device.",
+    "extensions": ["xlsx", "xlsm"],
+    "mimeTypes": [
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel.sheet.macroEnabled.12"
+    ]
+  },
+  "dependencies": {
+    "@betteroffice/xlsx": "^0.5.1",
+    "@lembaran/framework": "*",
+    "@lembaran/ui": "*"
+  },
+  "scripts": {
+    "dev": "vite --config ../vite.dev.config.ts",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

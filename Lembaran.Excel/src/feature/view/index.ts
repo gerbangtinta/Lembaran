@@ -1,0 +1,17 @@
+export {
+  MAX_ZOOM,
+  MIN_ZOOM,
+  REVEAL_MARGIN,
+  ZOOM_STEP,
+  cellAddress,
+  clampScroll,
+  clampZoom,
+  columnName,
+  ensureVisible,
+  hitLabel,
+  revealScroll,
+  stepSheet,
+  stepZoom,
+  zoomLabel,
+  type ScrollPoint,
+} from './view';

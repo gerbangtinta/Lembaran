@@ -1,0 +1,132 @@
+/* Format-specific only: the frame, rail, paper, bars and buttons come from @lembaran/ui. */
+
+.xl-book {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--lb-surface-2);
+}
+
+.xl-scroll {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background: var(--lb-surface-2);
+}
+
+/* the sheet's extent lives on the holder; the canvas sticks to the viewport and repaints the window */
+.xl-holder {
+  position: relative;
+}
+
+.xl-canvas {
+  position: sticky;
+  top: 0;
+  left: 0;
+  display: block;
+  background: var(--lb-paper);
+  cursor: cell;
+  touch-action: manipulation;
+}
+
+.xl-waiting {
+  margin: auto;
+  font-size: 13px;
+  color: var(--lb-text-dim);
+}
+
+/* ---------- sheet tabs ---------- */
+
+.xl-tabs {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 4px 8px;
+  overflow-x: auto;
+  border-top: 1px solid var(--lb-border);
+  background: var(--lb-surface);
+  scrollbar-width: thin;
+}
+
+.xl-tab {
+  flex: none;
+  min-height: 30px;
+  min-width: 0;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--lb-text-dim);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.xl-tab:hover {
+  background: color-mix(in srgb, var(--lb-text) 7%, transparent);
+}
+
+.xl-tab[aria-current='true'] {
+  color: var(--lb-text);
+  font-weight: 600;
+  border-color: var(--lb-border);
+  background: var(--lb-surface-2);
+}
+
+/* ---------- find ---------- */
+
+.xl-find {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--lb-border);
+  background: var(--lb-surface);
+}
+
+.xl-find-input {
+  flex: 1;
+  min-width: 0;
+  min-height: var(--lb-control);
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--lb-border);
+  border-radius: 8px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+}
+
+.xl-find-count {
+  flex: none;
+  font-size: 12px;
+  color: var(--lb-text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.xl-find-step {
+  flex: none;
+  min-width: var(--lb-control);
+  min-height: var(--lb-control);
+  padding: 0 8px;
+  font: inherit;
+  font-size: 13px;
+  border: 1px solid var(--lb-border);
+  border-radius: 8px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  cursor: pointer;
+}
+
+.xl-find-step:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

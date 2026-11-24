@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { readSource, type DocumentSource } from '@lembaran/framework';
-import { EmptyState, useFullscreen, useIsMobile } from '@lembaran/ui';
+import { EmptyState, onZoomRequest, useFullscreen, useIsMobile } from '@lembaran/ui';
 import { openDeck, type Deck } from './feature/deck';
 import { openFromDisk } from './feature/open';
 import { fitScale, stepScale, stepSlide } from './feature/view';
@@ -100,6 +100,9 @@ export function SlideApp({ source = null }: Props) {
     setFit(false);
     setScale((value) => stepScale(value, -1));
   }, []);
+
+  // Ctrl + wheel re-renders the slide at the new scale instead of scaling the app around it
+  useEffect(() => onZoomRequest((direction) => (direction === 1 ? scaleIn() : scaleOut())), [scaleIn, scaleOut]);
 
   const fitNow = useCallback(() => setFit(true), []);
 

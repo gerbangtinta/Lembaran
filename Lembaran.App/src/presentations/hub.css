@@ -1,131 +1,866 @@
+/* Hub, desktop: a bar that stays put, then folder, readers and recents on one column of sections.
+   Phone rules never live here — they are in mobile/hub-phone.css. */
+
 .hub-dropzone,
 .hub-shell {
   height: 100%;
 }
 
 .hub-shell {
+  display: flex;
+  flex-direction: column;
   overflow: auto;
-  padding: 28px clamp(16px, 5vw, 56px) 48px;
-  max-width: 1100px;
-  margin: 0 auto;
+  background: var(--lb-bg);
 }
 
-.hub-header h1 {
-  margin: 0;
-  font-size: clamp(24px, 4vw, 34px);
-  letter-spacing: -0.02em;
-}
+/* ---- the bar ---- */
 
-.hub-header p {
-  margin: 6px 0 24px;
-  color: var(--lb-text-dim);
-  font-size: 14px;
-  max-width: 60ch;
-}
-
-.hub-error {
+.hub-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
-  gap: 12px;
-  justify-content: space-between;
-  padding: 10px 14px;
-  margin-bottom: 16px;
-  border: 1px solid var(--lb-danger);
-  border-radius: var(--lb-radius);
-  color: var(--lb-danger);
-  background: color-mix(in srgb, var(--lb-danger) 8%, transparent);
-  font-size: 13px;
+  gap: 18px;
+  padding: 10px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--lb-border);
+  background: color-mix(in srgb, var(--lb-surface) 88%, transparent);
+  backdrop-filter: blur(10px);
 }
 
-.hub-error button {
-  min-height: 32px;
-  min-width: 32px;
-  border: none;
-  background: transparent;
-  color: inherit;
+.hub-brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: none;
 }
+
+.hub-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--lb-accent);
+  color: var(--lb-accent-contrast);
+}
+
+.hub-word {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hub-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 460px;
+  padding: 0 10px;
+  border: 1px solid var(--lb-border);
+  border-radius: var(--lb-radius);
+  background: var(--lb-surface);
+  color: var(--lb-text-dim);
+}
+
+.hub-search:focus-within {
+  border-color: var(--lb-accent);
+}
+
+.hub-search .lb-field {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.hub-search .lb-field:focus {
+  outline: none;
+}
+
+.hub-bar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* the app's own zoom: Ctrl + scroll changes it, a click puts it back to 100% */
+.hub-scale {
+  min-width: 44px;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--lb-text-dim);
+  font-family: var(--lb-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-scale:hover:not(:disabled) {
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+}
+
+/* the "are you sure" pair that replaces a destructive button in place */
+.hub-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 2px 10px;
+  border: 1px solid color-mix(in srgb, var(--lb-accent-2) 45%, var(--lb-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lb-accent-2) 12%, var(--lb-surface));
+  font-size: 12px;
+  color: color-mix(in srgb, var(--lb-accent-2) 75%, var(--lb-text));
+}
+
+.hub-confirm button {
+  min-height: 26px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.hub-confirm-yes {
+  border-color: transparent;
+  background: var(--lb-accent-2);
+  color: var(--lb-accent-2-contrast);
+  font-weight: 600;
+}
+
+.hub-confirm-yes:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lb-accent-2) 82%, #000);
+}
+
+/* ---- the page ---- */
+
+.hub-main {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px clamp(16px, 4vw, 40px) 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.hub-intro h1 {
+  margin: 0;
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 620;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.hub-intro p {
+  margin: 10px 0 0;
+  max-width: 62ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lb-text-dim);
+}
+
+.hub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-margin-top: 72px;
+}
+
+.hub-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--lb-border);
+}
+
+.hub-count {
+  font-family: var(--lb-mono);
+  font-size: 11px;
+  color: var(--lb-text-dim);
+}
+
+.hub-note,
+.hub-tagline {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--lb-text-dim);
+}
+
+.hub-flag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lb-accent-2) 16%, var(--lb-surface));
+  color: color-mix(in srgb, var(--lb-accent-2) 80%, var(--lb-text));
+  font-size: 11px;
+  font-weight: 550;
+}
+
+/* ---- readers ---- */
 
 .hub-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 12px;
 }
 
 .hub-card {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 16px;
+  padding: 16px 16px 14px;
   border: 1px solid var(--lb-border);
   border-radius: 14px;
   background: var(--lb-surface);
+  box-shadow: var(--lb-shadow-sm);
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.hub-card:hover {
+  border-color: var(--lb-border-strong);
   box-shadow: var(--lb-shadow);
+  transform: translateY(-1px);
 }
 
 .hub-card header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
 .hub-card h2 {
   margin: 0;
-  font-size: 16px;
-}
-
-.hub-ext {
-  font-family: var(--lb-mono);
-  font-size: 11px;
-  color: var(--lb-text-dim);
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .hub-card p {
   margin: 0;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12.8px;
+  line-height: 1.55;
   color: var(--lb-text-dim);
   flex: 1;
 }
 
-.hub-card button {
-  margin-top: 6px;
+.hub-card-open {
+  align-self: flex-start;
+  min-height: 30px;
+  margin-top: 4px;
+  padding: 0 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
 }
 
 .hub-card.is-planned {
-  opacity: 0.62;
+  opacity: 0.66;
   border-style: dashed;
   box-shadow: none;
 }
 
-.hub-recents {
-  margin-top: 32px;
+.hub-card.is-planned:hover {
+  transform: none;
+  box-shadow: none;
 }
 
-.hub-recents h2 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+/* ---- bound folder ---- */
+
+.hub-invite {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border: 1px dashed var(--lb-border-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lb-surface) 70%, transparent);
+}
+
+.hub-invite h3 {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.hub-invite p {
+  margin: 6px 0 0;
+  max-width: 58ch;
+  font-size: 12.8px;
+  line-height: 1.55;
   color: var(--lb-text-dim);
-  margin: 0 0 10px;
 }
 
-.hub-recents ul {
+.hub-invite-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+.hub-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hub-folder-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--lb-mono);
+}
+
+.hub-folder-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  align-items: center;
+}
+
+.hub-folder-actions button {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+
+/* the folder's actions are icons: the label lives in the tooltip and the aria-label */
+.hub-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-surface);
+  color: var(--lb-text-dim);
+}
+
+.hub-icon-btn:hover:not(:disabled) {
+  border-color: var(--lb-border-strong);
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+}
+
+.hub-icon-btn:focus-visible {
+  color: var(--lb-text);
+}
+
+/* the count chip explains itself on hover instead of spending a line on the page */
+.hub-count-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.hub-count {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border: 1px solid var(--lb-border);
+  border-radius: 999px;
+  background: var(--lb-surface-2);
+  font-family: var(--lb-mono);
+  font-size: 10.5px;
+  color: var(--lb-text-dim);
+  cursor: pointer;
+}
+
+.hub-count:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lb-text) 6%, var(--lb-surface-2));
+  color: var(--lb-text);
+}
+
+.hub-count[aria-expanded='true'] {
+  border-color: var(--lb-border-strong);
+  color: var(--lb-text);
+}
+
+/* the helper is a tile board: one tile per kind, the number first */
+.hub-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  display: grid;
+  grid-auto-flow: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--lb-border-strong);
+  border-radius: 12px;
+  background: var(--lb-surface);
+  box-shadow: var(--lb-shadow);
+  font-family: var(--lb-font);
+  opacity: 0;
+  transform: translateY(-3px);
+  pointer-events: none;
+  transition:
+    opacity 110ms ease,
+    transform 110ms ease;
+}
+
+/* a pointer opens it by hovering; a finger opens it by tapping, and outside taps close it */
+@media (hover: hover) {
+  .hub-count-wrap:hover .hub-tip {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hub-tip.is-open {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hub-tip-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 58px;
+  padding: 7px 9px;
+  border-radius: 9px;
+  background: var(--lb-surface-2);
+}
+
+.hub-tip-value {
+  font-size: 15px;
+  font-weight: 620;
+  font-variant-numeric: tabular-nums;
+  color: var(--lb-text);
+  line-height: 1.1;
+}
+
+.hub-tip-label {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lb-text-dim);
+  white-space: nowrap;
+}
+
+.hub-files {
+  display: none;
+}
+
+/* a thin, quiet scrollbar everywhere the hub scrolls — never the browser's chunky default */
+.hub-shell,
+.hub-browse,
+.hub-browse-phone,
+.hub-main > section {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--lb-text) 20%, transparent) transparent;
+}
+
+.hub-shell::-webkit-scrollbar,
+.hub-browse::-webkit-scrollbar,
+.hub-browse-phone::-webkit-scrollbar,
+.hub-main > section::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.hub-shell::-webkit-scrollbar-track,
+.hub-browse::-webkit-scrollbar-track,
+.hub-browse-phone::-webkit-scrollbar-track,
+.hub-main > section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.hub-shell::-webkit-scrollbar-thumb,
+.hub-browse::-webkit-scrollbar-thumb,
+.hub-browse-phone::-webkit-scrollbar-thumb,
+.hub-main > section::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lb-text) 18%, transparent);
+  background-clip: padding-box;
+}
+
+.hub-shell::-webkit-scrollbar-thumb:hover,
+.hub-browse::-webkit-scrollbar-thumb:hover,
+.hub-browse-phone::-webkit-scrollbar-thumb:hover,
+.hub-main > section::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--lb-text) 32%, transparent);
+  background-clip: padding-box;
+}
+
+/* ---- breadcrumb + one level of the folder ---- */
+
+.hub-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  min-height: 28px;
+}
+
+.hub-crumb {
+  min-height: 26px;
+  min-width: 0;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--lb-text-dim);
+  font-family: var(--lb-mono);
+  font-size: 12.5px;
+}
+
+.hub-crumb:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lb-text) 7%, transparent);
+  color: var(--lb-text);
+}
+
+.hub-crumb[aria-current='location'] {
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+  font-weight: 600;
+}
+
+.hub-crumb-group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.hub-crumb-sep {
+  color: var(--lb-border-strong);
+  font-size: 12px;
+}
+
+/* the way out of a folder is a row, the way every file manager draws it */
+.hub-row-parent .hub-row-icon {
+  color: var(--lb-text-dim);
+}
+
+.hub-row-parent .hub-row-label {
+  font-family: var(--lb-mono);
+  letter-spacing: 0.04em;
+}
+
+.hub-row-empty {
+  padding: 12px 14px;
+  margin: 0;
+}
+
+/* exactly ten rows, then the list scrolls itself — the page never grows with the folder */
+.hub-browse {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 440px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--lb-border);
+  border-radius: 12px;
+  background: var(--lb-surface);
+}
+
+.hub-browse li + li {
+  border-top: 1px solid var(--lb-border);
+}
+
+/* one list row: icon, name over its meta, and the action that a hover reveals */
+.hub-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+}
+
+.hub-row:hover {
+  background: var(--lb-surface-2);
+}
+
+.hub-row-icon {
+  display: inline-flex;
+  color: var(--lb-text-dim);
+}
+
+.hub-row-folder .hub-row-icon {
+  color: var(--lb-accent);
+}
+
+.hub-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hub-row-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-row-folder .hub-row-label {
+  font-weight: 550;
+}
+
+.hub-row-meta {
+  font-size: 11px;
+  color: var(--lb-text-dim);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-row-action {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--lb-accent);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.hub-row-folder .hub-row-action {
+  opacity: 1;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--lb-text-dim);
+}
+
+.hub-row:hover .hub-row-action {
+  opacity: 1;
+}
+
+.hub-row:focus-visible .hub-row-action {
+  opacity: 1;
+}
+
+.hub-note-tight {
+  font-size: 11.5px;
+}
+
+/* ---- the expanded folder: 90% of the window over a blurred, darkened page ---- */
+
+.hub-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, #06110a 58%, transparent);
+  backdrop-filter: blur(10px) saturate(0.85);
+  animation: hub-fade 140ms ease;
+}
+
+.hub-overlay-panel {
+  display: flex;
+  flex-direction: column;
+  width: 90vw;
+  height: 90vh;
+  overflow: hidden;
+  border: 1px solid var(--lb-border-strong);
+  border-radius: 18px;
+  background: var(--lb-surface);
+  box-shadow: 0 30px 80px rgb(6 17 10 / 45%);
+}
+
+.hub-overlay-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--lb-border);
+}
+
+.hub-overlay-head > div:first-child {
+  margin-right: auto;
+}
+
+.hub-overlay-head h2 {
+  margin: 0 0 2px;
+}
+
+.hub-overlay-title {
+  font-family: var(--lb-mono);
+  font-size: 12.5px;
+  color: var(--lb-text-dim);
+}
+
+.hub-overlay-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding: 14px 18px 18px;
+  overflow: hidden;
+}
+
+/* the overlay's own search: same field as the page, so the tree is searchable from the dialog too */
+.hub-search-overlay {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 180px;
+  max-width: 320px;
+  flex: 1;
+  padding: 0 9px;
+  min-height: 32px;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-surface-2);
+  color: var(--lb-text-dim);
+}
+
+.hub-search-overlay:focus-within {
+  border-color: var(--lb-accent);
+  background: var(--lb-surface);
+}
+
+.hub-search-overlay .lb-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 30px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12.5px;
+}
+
+.hub-search-overlay .lb-field:focus {
+  outline: none;
+}
+
+/* folders-to-step-through or every file at once */
+.hub-overlay-modes {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  padding: 2px;
+  border: 1px solid var(--lb-border);
+  border-radius: 9px;
+  background: var(--lb-surface-2);
+}
+
+.hub-mode {
+  min-height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--lb-text-dim);
+  font-size: 12px;
+}
+
+.hub-mode.is-on {
+  background: var(--lb-surface);
+  color: var(--lb-text);
+  font-weight: 550;
+  box-shadow: var(--lb-shadow-sm);
+}
+
+.hub-mode:hover:not(.is-on) {
+  background: transparent;
+  color: var(--lb-text);
+}
+
+/* inside the overlay the list takes the room instead of stopping at ten rows */
+.hub-overlay-body .hub-browse {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+
+@keyframes hub-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- recents: one row, a file, and a way to drop it ---- */
+
+.hub-recents {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
-.hub-recents button {
-  width: 100%;
+.hub-recent-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.hub-recent {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   gap: 12px;
+  flex: 1;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
   text-align: left;
   font-size: 13px;
+}
+
+.hub-recent:hover {
+  background: var(--lb-surface);
+  border-color: var(--lb-border);
+}
+
+.hub-recent-x {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lb-text-dim);
+  font-size: 15px;
+  line-height: 1;
+  opacity: 0.5;
+  transition:
+    opacity 120ms ease,
+    background 120ms ease;
+}
+
+.hub-recent-x:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lb-danger) 14%, transparent);
+  color: var(--lb-danger);
+  opacity: 1;
 }
 
 .hub-recent-name {
@@ -135,16 +870,50 @@
 }
 
 .hub-recent-when {
-  color: var(--lb-text-dim);
   flex: none;
-}
-
-.hub-empty {
-  font-size: 13px;
+  font-size: 11.5px;
   color: var(--lb-text-dim);
 }
 
-/* The embedded reader fills the page; the hub keeps only a way back. */
+/* ---- foot ---- */
+
+.hub-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px clamp(16px, 4vw, 40px) 28px;
+  border-top: 1px solid var(--lb-border);
+  font-size: 12px;
+  color: var(--lb-text-dim);
+}
+
+/* ---- errors ---- */
+
+.hub-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid var(--lb-danger);
+  border-radius: var(--lb-radius);
+  color: var(--lb-danger);
+  background: color-mix(in srgb, var(--lb-danger) 8%, transparent);
+  font-size: 13px;
+}
+
+.hub-error button {
+  min-height: 28px;
+  min-width: 28px;
+  padding: 0;
+}
+
+/* ---- the embedded reader ---- */
+
 .hub-frame-wrap {
   display: flex;
   flex-direction: column;
@@ -155,23 +924,43 @@
 .hub-frame-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 8px;
   border-bottom: 1px solid var(--lb-border);
   background: var(--lb-surface);
 }
 
-.hub-frame-bar button {
-  min-height: 36px;
-  font-size: 13px;
+/* one slim line: a way back, then the document's name — the reader owns its own header below */
+.hub-frame-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--lb-text-dim);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.hub-frame-back:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lb-text) 8%, transparent);
+  color: var(--lb-text);
 }
 
 .hub-frame-title {
-  font-size: 13px;
-  color: var(--lb-text-dim);
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 12px;
+  color: var(--lb-text-dim);
 }
 
 .hub-frame {
@@ -221,4 +1010,11 @@
 
 .hub-missing button:hover {
   background: color-mix(in srgb, var(--lb-danger) 12%, var(--lb-surface));
+}
+
+/* a narrow desktop window is not a phone: it just stacks sooner */
+@media (max-width: 720px) {
+  .hub-search {
+    display: none;
+  }
 }

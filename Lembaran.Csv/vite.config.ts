@@ -6,7 +6,10 @@ export default defineConfig({
   base: '/csv/',
   plugins: [react()],
   resolve: { dedupe: ['react', 'react-dom'] },
+  // `/fonts/*` is copied to `dist/fonts` once by scripts/build-all.mjs; see Lembaran.Docs.
+  publicDir: resolve(import.meta.dirname, '../public'),
   build: {
+    copyPublicDir: false,
     outDir: resolve(import.meta.dirname, '../dist/csv'),
     emptyOutDir: true,
   },

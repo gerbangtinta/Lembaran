@@ -134,6 +134,15 @@
   background: transparent;
   color: var(--lb-text);
   padding: 0 2px;
+  /* a page box is a number to type, not a stepper: the ‹ › buttons beside it already move */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.pdf-pageinput::-webkit-outer-spin-button,
+.pdf-pageinput::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
 }
 
 .pdf-pageinput:hover {
@@ -216,7 +225,7 @@
   display: block;
   width: 104px;
   min-height: 60px;
-  background: #fff;
+  background: var(--lb-paper);
   border-radius: 3px;
   box-shadow: 0 0 0 1px var(--lb-border), 0 2px 6px rgb(0 0 0 / 8%);
   overflow: hidden;

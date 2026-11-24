@@ -23,8 +23,9 @@ npm run gates          # all of the above
 
 Measured 2026-11-24 from `npm run build`: hub **99.7 kB gzip** (budget 120), PDF reader
 **234.3 kB gzip** plus a 372 kB gzip pdf.js worker, CSV reader **106.7 kB gzip**, Word reader
-**148.8 kB gzip**, PowerPoint reader **117.4 kB gzip + 43.7 kB worker + 2.34 MB WASM**, in **5.6 s**
-for the whole site (11.6 MB in `dist/`).
+**148.8 kB gzip**, PowerPoint reader **117.4 kB gzip + 43.7 kB worker + 2.34 MB WASM**, Excel reader
+**120.1 kB gzip (117.5 JS + 2.6 CSS) + 2.91 MB gzip WASM**, in **8 s** for the whole site
+(19 MB in `dist/`).
 
 A new reader is added by creating `Lembaran.<Format>` with a `lembaran` block in its package.json
 (`id`, `slug`, `name`, `blurb`, `extensions`, `mimeTypes`). The build and the hub's registry both pick it
@@ -58,6 +59,7 @@ Starting a plain `vite` inside one project serves only that folder, and the hub'
 | `Lembaran.Csv` | `@lembaran/csv` | the reader: `feature/{open,grid}`, `presentations/{layout/viewport,ui,mobile}` |
 | `Lembaran.Docs` | `@lembaran/docs` | the reader: `feature/{open,render,zoom,paginate,find}`, `presentations/{layout/viewport,ui,mobile}` |
 | `Lembaran.Pptx` | `@lembaran/pptx` | the reader: `feature/{open,deck,view}`, `presentations/{layout/viewport,component,ui,mobile}` |
+| `Lembaran.Excel` | `@lembaran/excel` | the reader: `feature/{open,workbook,view}`, `presentations/{layout/viewport,component,ui,mobile}` |
 
 Import direction is one way: `Lembaran.App` -> `Lembaran.Pdf` -> `Lembaran.UI` -> `Lembaran`. Never the
 reverse, and never reader -> reader. Full rules: `AGENTS/skills/lembaran/references/slices.md`.
@@ -82,13 +84,174 @@ find "banana" -> 2 hits, jumping to page 2. Resource timeline: **83 requests, ze
 | | raw | gzip |
 | --- | --- | --- |
 | `pdfjs-dist` (main + worker) | 1.71 MB | 0.50 MB |
-| `@betteroffice/xlsx` (not installed yet) | 7.23 MB | 2.84 MB |
-| `@betteroffice/pptx` (not installed yet) | 6.01 MB | 2.34 MB |
+| `@betteroffice/xlsx` (engine) | 7.58 MB WASM | 2.91 MB |
+| `@betteroffice/pptx` (engine) | 6.15 MB WASM | 2.34 MB |
 | `@betteroffice/docx` read-only subset (not installed yet) | 10.65 MB | 4.03 MB |
 | `@betteroffice/docx` edit module - **never fetched by a reader** | 23.85 MB | 8.23 MB |
 | `papaparse` | 20 KB | 7 KB |
 | `docx-preview` + the Word reader | 496 KB | 148.8 KB |
 | `@betteroffice/pptx` + the PowerPoint reader | 391.6 KB + 163.2 KB worker + 6.15 MB WASM | 117.4 KB + 43.7 KB + 2.34 MB |
+| `@betteroffice/xlsx` + the Excel reader | 385.9 KB + 10.8 KB CSS + 7.58 MB WASM | 117.5 KB + 2.6 KB + 2.91 MB |
+| Substitute fonts (16 faces, `public/fonts`) | 8.2 MB | 4.1 MB |
+| — per family | Carlito 2.61 MB, DejaVu Sans 2.62 MB, Liberation Sans 1.57 MB, Liberation Serif 1.45 MB | 1.12 / 1.35 / 0.83 / 0.81 MB |
+
+## Fonts
+
+Calibri, Arial, Helvetica, Times New Roman, Times and Verdana are proprietary: they are never served,
+downloaded or embedded. Lembaran ships **open faces as substitutes** and aliases them under the
+document's own family names, so a document that asks for "Arial" gets Liberation Sans without knowing
+it, and PDF text stays the size the file intends:
+
+| Document family | Substitute | Licence | Metrics |
+| --- | --- | --- | --- |
+| Calibri | Carlito | OFL-1.1 | metric-compatible |
+| Arial, Helvetica | Liberation Sans | OFL-1.1 | metric-compatible |
+| Times New Roman, Times | Liberation Serif | OFL-1.1 | metric-compatible |
+| Verdana | DejaVu Sans | Bitstream Vera | **approximate**, wider than Verdana |
+
+Where it plugs in:
+
+- `public/fonts/` holds the 16 TTFs, `manifest.json` (family, faces, weight, style, licence file,
+  copyright, source, version), `README.txt` and `licenses/`. The hub's `publicDir` is the repository's
+  `public/`, so `dist/` gets `fonts/` and `_headers` at the site root; `scripts/build-all.mjs` copies
+  `public/fonts` again and fails if a face or `dist/fonts` is missing.
+- `Lembaran.UI/src/theme/fonts.css` declares 24 `@font-face` rules that name the **document** family
+  (`font-family: Calibri`) and point at `/fonts/*.ttf`. A `local("Calibri")` source comes first: a
+  machine that owns the real font uses it, and only then the substitute downloads. This is what makes
+  docx-preview's inline `font-family: Calibri` and a canvas `ctx.font = '16px Arial'` resolve at all.
+- `Lembaran.UI/src/theme/standardFonts.ts` exposes `loadStandardFonts()`, which asks
+  `document.fonts.load()` for the 24 specs. The Word reader awaits it before `renderAsync`, because
+  docx-preview paginates by measuring text: measuring before the substitute exists bakes the wrong page
+  breaks in. The Excel grid repaints once when the faces are ready. It never rejects — a missing face
+  must degrade to the browser fallback, not fail a document. It warms all six families because a `.docx`
+  does not say which ones it will use until it is laid out; a face whose `local()` matches an installed
+  original costs nothing, so the worst case (**4.1 MB gzip**) only happens on a machine that owns none of
+  the four Microsoft families, and only once per browser cache.
+- The PowerPoint engine paints in WASM and never sees CSS, so it needs bytes:
+  `Lembaran.Pptx/src/feature/fonts/fonts.ts` fetches faces and `openDeck` registers them with
+  `handle.registerFont(face)` under the document's family names. **Only the families the deck names
+  are fetched** — `namedFamilies(handle.snapshot())` walks every slide's shapes and runs first. A deck
+  that uses only Arial pulls 0.83 MB, not 4.1 MB. Registration happens after `openPresentation` and
+  before the first `layoutSlide`, so the first paint already has the metrics.
+- Fetch failures are skipped (`Promise.all` of byte fetches that resolve to `null`), and an unknown
+  family is simply not registered: the engine draws those runs with its own face. Better a slightly
+  wrong glyph than an empty slide.
+
+## The palette, and where white is allowed
+
+One palette, two modes: **pastel green** (default) and **dark**, both in
+`Lembaran.UI/src/theme/tokens.css`. Green acts, clay points: `--lb-accent` (dark green) is the only
+colour a filled button may use, `--lb-accent-2` (clay) marks attention — conflicts, warnings, the
+"this is not remembered" flag — and is never a commit colour. `--lb-text`, `--lb-surface` and
+`--lb-bg` are all green-tinted, so the chrome reads as one material.
+
+`--lb-paper` is the **only white in the app** and it means one thing: the sheet a document is drawn on.
+`surface.css`, the rail thumbnail and the Excel canvas point at it; nothing else may be `#fff`. The
+retired warm `light` theme is folded into pastel by `normalisePreference`, so a browser that stored
+`light` lands on pastel rather than on no theme at all.
+
+Shared control classes live at the bottom of `tokens.css` (`lb-primary`, `lb-ghost`, `lb-marker`,
+`lb-chip`, `lb-label`, `lb-field`) — a hub, a reader toolbar and a phone bar then look like the same app
+without either of them importing the other.
+
+## The hub
+
+`Lembaran.App` is two layouts and one feature layer. `HubShell` (desktop) is a sticky bar — brand,
+search, bind folder, theme — over three sections in a fixed order (Folder, Readers, Recent);
+`HubMobileShell` is brand + theme over three tabs with one section visible. They share only
+`presentations/props.ts` and `ReaderCard`; the folder panel is `layout/FolderLibrary.tsx` on desktop and
+`mobile/MobileFolderList.tsx` on a phone.
+
+A reader is framed, not re-skinned: `layout/HubShell` hands the document to `ReaderFrame`, whose bar is a
+**single 30 px line** — a `‹` back control and the document's file name. Everything else in that strip is the
+reader's own toolbar, so the hub never repeats a title the reader already shows.
+
+`Ctrl`/`⌘` + wheel is a **document** zoom where a reader owns the view and the **app's** zoom in the hub:
+`Lembaran.UI/src/theme/appScale.ts` cancels the browser's own zoom, then either dispatches `lembaran:zoom`
+to a registered reader (`onZoomRequest`) or moves a stored app scale between 80% and 150%. A reader
+re-lays the page at the new scale — the PDF canvas is re-rastered, so it stays sharp — while the app path
+puts the scale on `#root` as `zoom` with the viewport divided out (`width: calc(100vw / s); height:
+calc(100dvh / s)`), so the shell keeps filling the window instead of overflowing it. The app-scale preference
+is shared the way the theme is (localStorage + storage events), a frame embedded in the hub does **not**
+scale itself — its parent already does — and the hub bar only shows the percentage **once it is not 100%**, as
+a button that puts it back.
+
+**Bound folder** (`feature/folder/store.ts` over `Lembaran/src/folders/`): `showDirectoryPicker` →
+`{ id: 'bound', name, handle, boundAt }` in Dexie → `listFolder` walks the tree once and offers only
+files a built reader accepts, skipping dot-files, dot-folders and `~$` locks. The walk is bounded by
+`FOLDER_DEPTH_LIMIT` (8) and `FOLDER_FILE_LIMIT` (300) and keeps handles rather than bytes, so a folder
+that turns out to be a home directory cannot hang the tab.
+
+The section is a **browser**, not a dump: `folderView(files, path)` (pure, in `entries.ts`) turns that one
+listing into one level — subfolders first, then the files that live here — and the breadcrumb
+(`pathSegments`) walks back up. Stepping into a folder never touches the disk again, and the way out is a
+`..` row at the top of the list (an up arrow and the two dots), not a button beside the breadcrumb — the
+same row a file manager draws. **A search term replaces the level with results from the whole tree**:
+`searchFolder` returns matching folders (tap one to navigate to it) and matching files wherever they live,
+each row carrying its folder in the meta line, so `q1` finds `reports/2024/q1.pdf` from the top of the
+folder and `2024` offers the folder itself. The list is exactly **ten 44 px rows** (`max-height: 440px;
+overflow-y: auto`) so the page never grows with the folder. On a desk, `Expand` opens the same browser in a
+dialog at **90 vw × 90 vh** over `blur(10px)` on a darkened page (`layout/FolderOverlay.tsx`), with its own
+search field, a **Folders / All files** switch, and the list taking the height instead of stopping at ten
+rows; Escape, the Close button and the backdrop all dismiss it. **A phone has no expand**: the folder is
+already its own tab with the whole screen, so the phone panel is the browser alone (`mobile/`) and the
+overlay files are gone.
+
+The header's actions are **icons** (`component/icons.tsx`, 18 px glyphs in 34 px buttons on a desk, 16 px in
+36 px buttons on a phone — the phone comes down a size so the header fits) with `title` and `aria-label`:
+expand (arrows out of a frame, desk only), change folder (folder with a circular arrow), unbind (broken
+chain) — no labels to read. The count chip says just `6 files`; `CountChip` is a toggle, not a
+hover-only target — a desk opens the tile board on hover (`@media (hover: hover)`), a finger opens it with a tap
+and closes it by tapping anywhere else or pressing Escape, because a touch screen has no hover to leave and the
+old `:focus` rule left the helper stuck over the list. The line under the list reads `1 folder · 5 files` and
+drops the word "here" — and when a folder holds no documents it simply says `0 files`. The `..` row carries an
+up arrow and no chevron: a forward arrow on a step out was the wrong direction.
+
+**The folder area owns its history.** `useFolderPath` (`feature/folder/history.ts`) pushes one
+`history.pushState` entry per folder step, carrying `{ lbFolder: path }`, and a `popstate` listener applies it
+back. So the mouse's back/forward buttons (and Alt+Left/Right) walk the folder tree instead of leaving the hub,
+`mousedown` on buttons 3 and 4 is `preventDefault`ed so they cannot act as page controls, and the hook lives
+only inside the folder panel — a reader keeps ordinary browser history because the panel is unmounted then.
+
+On a phone the shell itself never scrolls: `.hub-shell` is `overflow: hidden`, `.hub-main` is the flex
+remainder, the active section owns `height: 100%` and the folder pane hands its height to the list, so there is
+exactly **one** scrollbar — the folder list's — filling the screen instead of stacking a page scrollbar next to
+an inner one. Every hub scroller (`.hub-shell`, `.hub-browse`, `.hub-browse-phone`, `.hub-main > section`) is
+`scrollbar-width: thin` with an 8 px transparent-track thumb, so the scrollbar reads as a hint, not a widget.
+The phone keeps the **search box** the desk has (it filters readers and the bound folder) on the **same top row**
+as the wordmark, the version chip and the theme toggle — the chip drops to 9 px there so the row still fits at
+390 px, and the toggle is pushed to the end by `.hub-bar-actions`. The version string is not typed twice: Vite
+defines `__APP_VERSION__` from `Lembaran.App/package.json` in both `vite.config.ts` and `vite.dev.config.ts`.
+
+A reload keeps the handle but not the permission, so the first look uses `folderPermission` (no prompt) and
+Reconnect uses `ensureFolderPermission` (prompt, inside the click). `Change folder` re-puts the same `bound`
+record (no unbind first), `Unbind` swaps itself for an inline `Forget / Cancel` pair, and a **recent** can be
+dropped with the × at the end of its row — no confirmation, because the file on disk is untouched and the
+shortcut is the only thing that goes.
+
+There is deliberately **no Refresh button**: on Chromium a re-walk reads the same directory the tab already
+listed, so it can only produce what is already on screen; on Firefox the `webkitdirectory` fallback imported
+every file at pick time and cannot see the disk again at all. The listing is re-read when the folder is
+bound, when permission is granted again, and on reload — three moments that actually change something.
+
+## Deploy
+
+GitHub Actions builds, Cloudflare Pages only hosts — no build minutes spent on the host side.
+
+- `.github/workflows/build.yml`, Node pinned by `.nvmrc` (22). One job runs `npm run gates`
+  (typecheck, tests, licenses, large-files, `readers:check`, build) and uploads the verified `dist/` as
+  an artifact; the deploy job downloads that same artifact, so Cloudflare receives exactly what the
+  gates passed.
+- A second job deploys with `cloudflare/wrangler-action@v3`:
+  `pages deploy dist --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT || 'lembaran' }} --branch=main`.
+  It runs on pushes to `main` and on `workflow_dispatch`, never on a pull request (PRs build only).
+- Required on the repository: secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and optionally
+  the variable `CLOUDFLARE_PAGES_PROJECT`. The Pages project must already exist as a **direct upload**
+  project — the workflow uploads files, it does not create the project.
+- `dist/_headers` (written by the build from `public/_headers`) carries COOP/COEP/CSP. Those headers are
+  load-bearing: `SharedArrayBuffer` and the WASM workers need cross-origin isolation, and `font-src 'self'`
+  is what keeps a substitute font from ever leaving the origin. A host that drops `_headers` breaks both.
+
 
 ## Known bugs
 
@@ -116,6 +279,10 @@ live beside it, so a read-only reader can still take notes.
   (`Surface`), the top bar, the status line, the inspector — while each format still paints its own
   document and keeps its own controls. The rail is geometry and timing, not a slide strip: the reader
   supplies the pixels, so PowerPoint's engine never enters the GUI package.
+- **The Excel engine runs on the main thread.** `openWorkbook` returns a synchronous handle and is the
+  stable API; `openWorkbookSession` (worker) is marked experimental. A reader that must ship therefore
+  uses the sync path, exactly as PowerPoint does: one WASM parse when the file opens, then a display
+  list per painted frame. The scroll handler repaints on `requestAnimationFrame`, never per event.
 - **The app is GPL-3.0-only; the dependencies are not.** The project itself is strong copyleft
   (`docs/adr/0001-adopt-copyleft-license.md`), which Apache-2.0 and MIT components permit as a one-way
   move; each of them keeps its own license and notices. Because the shipped artifact is JavaScript and
@@ -194,3 +361,46 @@ live beside it, so a read-only reader can still take notes.
   `Lembaran.UI/src/shell/mobile/`, imports its own `phone.css`, and shares only the neutral
   `Stage`/`Root`/`Body` classes with `shell/desktop/ReaderShell`. Copy markup instead of adding a
   `mobile` prop or a phone `@media` block to a desktop component; `App.tsx` is the only chooser.
+- **The sheet canvas is sticky, not absolutely positioned.** The scroller carries a spacer the size of
+  the sheet's extent and the canvas is `position: sticky; top: 0; left: 0`; scrolling only changes the
+  offsets handed to `displayList`. Moving the canvas with a `translate(scrollTop)` fights the native
+  scrollbar and flickers at the edges.
+- **Zoom divides the viewport, it does not resize the canvas.** Build the display list at
+  `clientWidth / zoom`, paint with `dpr × zoom`, and map a click back through `/ zoom`. Scaling the
+  canvas box instead makes the scroll extent and the hit-testing disagree.
+- **`@betteroffice/xlsx` hides its WASM behind its `exports` map.** Import
+  `node_modules/@betteroffice/xlsx/dist/generated/xlsx_wasm_bg.wasm?url` and pass it to `initWasm(url)`;
+  the package's own `new URL(..., import.meta.url)` default is not an asset Vite has emitted.
+- **A `@font-face` family name must be the document's, not the substitute's.** Declaring
+  `font-family: 'Liberation Sans'` helps nothing: the docx HTML says `Calibri` and a canvas says
+  `16px Arial`, and neither ever sees it. Every alias rule names the document family and points at the
+  substitute file, with `local()` first so a machine that owns the real font wins.
+- **The PowerPoint engine takes font bytes, not CSS.** The tempting code is "fetch all 16 faces and
+  register them" — 4.1 MB gzip for a deck that only uses Arial. Ask `handle.snapshot()` for the families
+  the deck names, fetch only those, and register them with `registerFont` **after** `openPresentation`
+  and **before** the first `layoutSlide`, or the first paint is measured with the wrong face.
+- **`dist/_headers` is part of the build, not of the host.** COOP/COEP enable `SharedArrayBuffer` for
+  the threaded WASM, and `font-src 'self'` is the promise that no font request ever leaves the origin.
+  A static host that ignores `_headers` (or a preview URL that strips them) degrades both silently.
+- **Vite resolves `url('/…')` in CSS against that project's `publicDir`.** The fonts are site-root
+  assets, so a reader build whose `publicDir` is its own (empty, absent) folder warns "didn't resolve at
+  build time" for all 16 faces and leaves the URLs alone. Every reader config now points `publicDir` at
+  the repository's `public/` with `build.copyPublicDir: false`; only the hub, which builds into the site
+  root, copies it.
+- **A directory handle survives a reload; its permission does not.** `queryPermission` returns `prompt`
+  or `denied` for a restored handle, and `requestPermission` only works inside a user gesture — calling
+  it on mount is silently refused. Ask the cheap question on mount, render a Reconnect button, and let
+  that click ask the real one.
+- **`FileSystemDirectoryHandle.values()` is missing from this TypeScript's `lib.dom`.** It exists in
+  Chromium, so the type is declared in `Lembaran/src/folders/store.ts` beside the picker declaration.
+  Without it the listing has to go through `keys()`, which is not the same walk.
+- **A Dexie table needs a `version()` block.** Adding `folders` to the existing `lembaran` database is
+  `this.version(2).stores({ recent: …, folders: 'id, boundAt' })`; forget it and `db.folders` throws at
+  runtime while types stay happy.
+- **`--lb-paper` is the only white.** A new surface that wants "card background" takes
+  `var(--lb-surface)`; reaching for `#fff` in the chrome undoes the palette. Only the sheet a document is
+  drawn on — `surface.css`, the rail thumbnail, the Excel canvas — may use paper.
+- **`zoom` on `#root` needs the viewport divided out.** Setting `zoom: 1.1` alone makes a `100dvh` root
+  taller than the window and every fixed overlay too big; `width: calc(100vw / s); height: calc(100dvh / s)`
+  beside it keeps the app inside the window at any scale. And a document inside the hub must **not** apply
+  the scale again (`ownsScale()` in `appScale.ts` compares `window.top`), or 110% becomes 121%.

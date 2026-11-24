@@ -1,0 +1,18 @@
+export {
+  GRID_HEADER,
+  activateSheet,
+  cellUnder,
+  disposeWorkbook,
+  ensureWasm,
+  matchPosition,
+  openXlsx,
+  paintSheet,
+  readCell,
+  searchWorkbook,
+  type CellSelection,
+  type PaintResult,
+  type PaintTheme,
+  type PaintView,
+  type SheetTab,
+  type Workbook,
+} from './workbook';
