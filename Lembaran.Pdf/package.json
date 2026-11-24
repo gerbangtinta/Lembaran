@@ -1,0 +1,25 @@
+{
+  "name": "@lembaran/pdf",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "lembaran": {
+    "id": "pdf",
+    "slug": "pdf",
+    "name": "PDF",
+    "blurb": "Continuous scroll, selectable text, find in document, notes.",
+    "extensions": ["pdf"],
+    "mimeTypes": ["application/pdf"]
+  },
+  "dependencies": {
+    "@lembaran/framework": "*",
+    "@lembaran/ui": "*",
+    "pdfjs-dist": "^6.5.438"
+  },
+  "scripts": {
+    "dev": "vite --config ../vite.dev.config.ts",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

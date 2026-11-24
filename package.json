@@ -1,0 +1,38 @@
+{
+  "name": "lembaran",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "npm@12.0.2",
+  "workspaces": [
+    "Lembaran",
+    "Lembaran.*"
+  ],
+  "scripts": {
+    "dev": "vite --config vite.dev.config.ts",
+    "readers": "node scripts/gen-readers.mjs",
+    "readers:check": "node scripts/gen-readers.mjs --check",
+    "build": "node scripts/build-all.mjs",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "large-files": "node scripts/large-files.mjs",
+    "large-files:check": "node scripts/large-files.mjs --check",
+    "licenses:check": "node scripts/licenses-check.mjs",
+    "notices": "node scripts/gen-notices.mjs",
+    "gates": "npm run typecheck && npm run test && npm run licenses:check && npm run large-files:check && npm run readers:check && npm run build"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1"
+  }
+}

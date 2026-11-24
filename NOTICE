@@ -1,0 +1,18 @@
+Lembaran
+Copyright 2026 Lembaran contributors
+
+This product is licensed under the Apache License, Version 2.0. See LICENSE.
+
+This product includes software developed by third parties. The full text of every
+license in use is in the LICENSES/ directory, the attribution lines are in
+THIRD-PARTY-NOTICES.md, and each dependency's version, license and measured payload
+are recorded in AGENTS/FRAMEWORK.md.
+
+Notably:
+
+  Mozilla pdf.js — Copyright 2012 Mozilla Foundation — Apache-2.0
+  React — Copyright (c) Meta Platforms, Inc. and affiliates — MIT
+  Comlink, Dexie.js — Apache-2.0
+
+No file leaves the device: this application makes no network request at runtime
+other than for its own assets.

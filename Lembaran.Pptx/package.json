@@ -1,0 +1,25 @@
+{
+  "name": "@lembaran/pptx",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "lembaran": {
+    "id": "pptx",
+    "slug": "pptx",
+    "name": "PowerPoint",
+    "blurb": "Slides painted by a Rust/WASM layout engine, with a thumbnail rail.",
+    "extensions": ["pptx"],
+    "mimeTypes": ["application/vnd.openxmlformats-officedocument.presentationml.presentation"]
+  },
+  "dependencies": {
+    "@betteroffice/pptx": "^0.5.1",
+    "@lembaran/framework": "*",
+    "@lembaran/ui": "*"
+  },
+  "scripts": {
+    "dev": "vite --config ../vite.dev.config.ts",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

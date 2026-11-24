@@ -1,0 +1,140 @@
+﻿/* Format-specific only: the frame — toolbar, stage, status — comes from @lembaran/ui. */
+
+.csv-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--lb-text-dim);
+}
+
+.csv-field select {
+  min-height: var(--lb-control);
+  font: inherit;
+  font-size: 13px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--lb-border);
+  background: var(--lb-surface);
+  color: var(--lb-text);
+}
+
+.csv-grid {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--lb-surface);
+}
+
+.csv-head {
+  flex: none;
+  overflow: hidden;
+  border-bottom: 1px solid var(--lb-border);
+  background: var(--lb-surface-2);
+}
+
+.csv-head-inner {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  will-change: transform;
+}
+
+.csv-corner,
+.csv-rownum {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--lb-text-dim);
+  background: var(--lb-surface-2);
+  border-right: 1px solid var(--lb-border);
+  font-variant-numeric: tabular-nums;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.csv-head-cells,
+.csv-cells {
+  display: flex;
+  align-items: stretch;
+}
+
+.csv-colname,
+.csv-cell {
+  flex: none;
+  display: block;
+  padding: 0 8px;
+  border-right: 1px solid var(--lb-border);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.csv-colname {
+  text-align: center;
+  font-size: 12px;
+  line-height: 27px;
+  font-weight: 600;
+  color: var(--lb-text-dim);
+  letter-spacing: 0.04em;
+}
+
+.csv-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+
+.csv-canvas {
+  position: relative;
+}
+
+.csv-row {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid color-mix(in srgb, var(--lb-border) 55%, transparent);
+}
+
+.csv-cell {
+  font-family: var(--lb-mono);
+  font-size: 12px;
+  line-height: 25px;
+  color: var(--lb-text);
+  cursor: cell;
+}
+
+.csv-cell:hover {
+  background: color-mix(in srgb, var(--lb-accent) 6%, transparent);
+}
+
+.csv-cell.is-selected {
+  background: color-mix(in srgb, var(--lb-accent) 16%, transparent);
+  outline: 2px solid var(--lb-accent);
+  outline-offset: -2px;
+  font-weight: 600;
+}
+
+/* banding follows the row number, not DOM order (rows are virtualized) */
+.csv-row.is-alt .csv-cell {
+  background-color: color-mix(in srgb, var(--lb-text) 2%, transparent);
+}
+
+.csv-row.is-alt .csv-cell.is-selected {
+  background-color: color-mix(in srgb, var(--lb-accent) 16%, transparent);
+}
+
+.csv-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

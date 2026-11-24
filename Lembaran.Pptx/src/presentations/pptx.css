@@ -1,0 +1,6 @@
+﻿/* Format-specific only: the frame, the rail and the paper come from @lembaran/ui. */
+
+/* the slide canvas is sized by the engine (`sizeCanvasForSlide`) and framed by `Surface` */
+.pptx-slide {
+  display: block;
+}

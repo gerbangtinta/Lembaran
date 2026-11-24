@@ -1,0 +1,78 @@
+/* The toolbar row and its controls. */
+
+.lb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--lb-border);
+  background: var(--lb-surface);
+}
+
+.lb-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--lb-border);
+  border-radius: var(--lb-radius);
+  background: var(--lb-surface-2);
+}
+
+.lb-toolbar-spacer {
+  margin-left: auto;
+}
+
+.lb-control {
+  min-height: var(--lb-control);
+  min-width: var(--lb-control);
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--lb-text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lb-control:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--lb-text) 8%, transparent);
+}
+
+.lb-control[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--lb-accent) 18%, transparent);
+  border-color: color-mix(in srgb, var(--lb-accent) 45%, transparent);
+}
+
+.lb-control:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lb-control-outline {
+  border-color: var(--lb-border);
+  background: var(--lb-surface-2);
+}
+
+.lb-readout {
+  min-width: 48px;
+  min-height: var(--lb-control);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--lb-text-dim);
+}
+
+.lb-readout:hover:not(:disabled) {
+  color: var(--lb-text);
+}

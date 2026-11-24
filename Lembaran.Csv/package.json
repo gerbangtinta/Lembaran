@@ -1,0 +1,28 @@
+{
+  "name": "@lembaran/csv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "lembaran": {
+    "id": "csv",
+    "slug": "csv",
+    "name": "CSV",
+    "blurb": "Streaming parse over a virtualized grid.",
+    "extensions": ["csv", "tsv"],
+    "mimeTypes": ["text/csv", "text/tab-separated-values"]
+  },
+  "dependencies": {
+    "@lembaran/framework": "*",
+    "@lembaran/ui": "*",
+    "papaparse": "^5.7.1"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^5.3.16"
+  },
+  "scripts": {
+    "dev": "vite --config ../vite.dev.config.ts",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

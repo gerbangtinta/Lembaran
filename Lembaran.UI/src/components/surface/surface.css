@@ -1,0 +1,19 @@
+/* The paper. Every reader draws its content into this frame, so a page and a slide sit the same way. */
+
+.lb-surface {
+  position: relative;
+  /* shrink-wrap the content: overlays (text, annotations) inset against the sheet, not the slot */
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 2px;
+  outline: 1px solid var(--lb-border);
+  box-shadow: var(--lb-shadow);
+}
+
+.lb-surface > canvas,
+.lb-surface > img {
+  display: block;
+  max-width: 100%;
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@lembaran/docs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "lembaran": {
+    "id": "docx",
+    "slug": "docs",
+    "name": "Word",
+    "blurb": "Paginated DOCX with real page breaks and headers.",
+    "extensions": ["docx"],
+    "mimeTypes": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
+  },
+  "dependencies": {
+    "@lembaran/framework": "*",
+    "@lembaran/ui": "*",
+    "docx-preview": "^0.4.1"
+  },
+  "scripts": {
+    "dev": "vite --config ../vite.dev.config.ts",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

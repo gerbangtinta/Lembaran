@@ -1,0 +1,8 @@
+/* The general GUI components: the rail, the paper, the header, the footer, the inspector.
+   Imported by shell.css so a reader that imports the frame gets the whole GUI layer. */
+
+@import './rail/rail.css';
+@import './surface/surface.css';
+@import './header/header.css';
+@import './footer/footer.css';
+@import './properties/properties.css';

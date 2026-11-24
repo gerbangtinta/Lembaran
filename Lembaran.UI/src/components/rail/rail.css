@@ -1,0 +1,116 @@
+/* The page/slide rail: a scrolling column of fixed-geometry cards, each holding a thumbnail canvas. */
+
+.lb-panel {
+  flex: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-right: 1px solid var(--lb-border);
+  background: var(--lb-surface);
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.lb-panel-item {
+  display: grid;
+  /* the number column is fixed and the card takes the rest: the card must never size
+     itself from its canvas, or every thumbnail ends up a slightly different width */
+  grid-template-columns: 16px 1fr;
+  /* the rail scrolls, so items must never shrink to fit it: a shrunken box would leave the
+     fixed-height card overlapping the next one */
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.lb-panel-number {
+  width: 16px;
+  text-align: right;
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--lb-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-panel-item[aria-current='true'] .lb-panel-number {
+  color: var(--lb-text);
+  font-weight: 600;
+}
+
+.lb-panel-card {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--lb-surface-2);
+  outline: 1px solid transparent;
+  overflow: hidden;
+}
+
+.lb-panel-item[aria-current='true'] .lb-panel-card {
+  outline: 2px solid var(--lb-accent);
+  background: color-mix(in srgb, var(--lb-accent) 10%, var(--lb-surface-2));
+}
+
+.lb-panel-card > * {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.lb-panel-card canvas,
+.lb-panel-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border-radius: 3px;
+}
+
+/* a thumbnail that has not been painted yet should look like it is coming, not broken */
+.lb-panel-card canvas[data-state='pending'] {
+  background: repeating-linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--lb-text) 5%, #fff) 0 12px,
+    color-mix(in srgb, var(--lb-text) 9%, #fff) 12px 24px
+  );
+  animation: lb-shimmer 1.4s linear infinite;
+}
+
+.lb-panel-card canvas[data-state='failed'] {
+  background: #fff;
+  outline: 1px dashed var(--lb-danger);
+  outline-offset: -1px;
+}
+
+@keyframes lb-shimmer {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 24px 0;
+  }
+}
+
+/* a page or slide carrying a note: a badge on the card, never a third grid cell */
+.lb-panel-note {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lb-accent);
+  box-shadow: 0 0 0 2px #fff;
+}

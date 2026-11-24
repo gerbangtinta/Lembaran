@@ -1,0 +1,239 @@
+.hub-dropzone,
+.hub-shell {
+  height: 100%;
+}
+
+.hub-shell {
+  overflow: auto;
+  padding: 28px clamp(16px, 5vw, 56px) 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.hub-header h1 {
+  margin: 0;
+  font-size: clamp(24px, 4vw, 34px);
+  letter-spacing: -0.02em;
+}
+
+.hub-header p {
+  margin: 6px 0 24px;
+  color: var(--lb-text-dim);
+  font-size: 14px;
+  max-width: 60ch;
+}
+
+.hub-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--lb-danger);
+  border-radius: var(--lb-radius);
+  color: var(--lb-danger);
+  background: color-mix(in srgb, var(--lb-danger) 8%, transparent);
+  font-size: 13px;
+}
+
+.hub-error button {
+  min-height: 32px;
+  min-width: 32px;
+  border: none;
+  background: transparent;
+  color: inherit;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.hub-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--lb-border);
+  border-radius: 14px;
+  background: var(--lb-surface);
+  box-shadow: var(--lb-shadow);
+}
+
+.hub-card header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hub-card h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.hub-ext {
+  font-family: var(--lb-mono);
+  font-size: 11px;
+  color: var(--lb-text-dim);
+}
+
+.hub-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--lb-text-dim);
+  flex: 1;
+}
+
+.hub-card button {
+  margin-top: 6px;
+}
+
+.hub-card.is-planned {
+  opacity: 0.62;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.hub-recents {
+  margin-top: 32px;
+}
+
+.hub-recents h2 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--lb-text-dim);
+  margin: 0 0 10px;
+}
+
+.hub-recents ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hub-recents button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.hub-recent-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-recent-when {
+  color: var(--lb-text-dim);
+  flex: none;
+}
+
+.hub-empty {
+  font-size: 13px;
+  color: var(--lb-text-dim);
+}
+
+/* The embedded reader fills the page; the hub keeps only a way back. */
+.hub-frame-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--lb-bg);
+}
+
+.hub-frame-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--lb-border);
+  background: var(--lb-surface);
+}
+
+.hub-frame-bar button {
+  min-height: 36px;
+  font-size: 13px;
+}
+
+.hub-frame-title {
+  font-size: 13px;
+  color: var(--lb-text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hub-frame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  min-height: 0;
+  background: var(--lb-bg);
+}
+
+.hub-missing {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--lb-danger);
+  background: color-mix(in srgb, var(--lb-danger) 8%, var(--lb-surface));
+  color: var(--lb-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hub-missing strong {
+  color: var(--lb-danger);
+}
+
+.hub-missing code {
+  font-family: var(--lb-mono);
+  font-size: 12px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--lb-surface-2);
+}
+
+.hub-missing button {
+  align-self: flex-start;
+  margin-top: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--lb-danger);
+  background: var(--lb-surface);
+  color: var(--lb-text);
+  cursor: pointer;
+}
+
+.hub-missing button:hover {
+  background: color-mix(in srgb, var(--lb-danger) 12%, var(--lb-surface));
+}
+
+/* Phone: a list, not a grid. */
+.hub-shell-phone .hub-header p {
+  margin-bottom: 16px;
+}
+
+.hub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hub-list .hub-card {
+  padding: 14px;
+}

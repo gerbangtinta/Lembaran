@@ -1,0 +1,122 @@
+/* The desktop reader frame and the neutral classes both frames share: root, shell, body, stage,
+   overlay, empty state. Phone rules live in mobile/phone.css and are imported by PhoneShell, so no
+   desktop stylesheet carries a phone rule. The components the frame is built from (rail, paper,
+   header, footer, inspector) live in components/ and are pulled in here. */
+
+@import '../components/components.css';
+
+.lb-root {
+  height: 100%;
+  display: flex;
+  min-height: 0;
+}
+
+.lb-root:fullscreen {
+  background: var(--lb-bg);
+}
+
+.lb-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+
+/* ---------- body ---------- */
+
+.lb-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--lb-bg);
+}
+
+.lb-stage-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+}
+
+.lb-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: var(--lb-bg);
+}
+
+.lb-stage-center {
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.lb-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  text-align: center;
+  background: color-mix(in srgb, var(--lb-bg) 84%, transparent);
+  color: var(--lb-text-dim);
+  font-size: 13px;
+  z-index: 3;
+}
+
+.lb-overlay[data-tone='error'] {
+  color: var(--lb-danger);
+  font-family: var(--lb-mono);
+  font-size: 12px;
+  word-break: break-word;
+}
+
+/* ---------- empty state ---------- */
+
+.lb-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  width: 100%;
+  padding: 24px;
+  background: var(--lb-bg);
+}
+
+.lb-empty-card {
+  max-width: 44ch;
+  text-align: center;
+  background: var(--lb-surface);
+  border: 1px solid var(--lb-border);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: var(--lb-shadow);
+}
+
+.lb-empty-card h1 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.lb-empty-card p {
+  margin: 0 0 18px;
+  color: var(--lb-text-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.lb-empty-card code {
+  font-family: var(--lb-mono);
+  font-size: 12px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--lb-surface-2);
+}
+
+.lb-empty-error {
+  font-family: var(--lb-mono);
+  font-size: 12px;
+  word-break: break-word;
+}

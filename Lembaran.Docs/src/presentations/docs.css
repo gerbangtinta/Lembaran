@@ -1,0 +1,67 @@
+﻿/* Format-specific only: the frame — toolbar, banner, stage, status — comes from @lembaran/ui. */
+
+.docs-paper {
+  width: fit-content;
+  margin: 0 auto;
+  padding: 20px 0 40px;
+}
+
+/* docx-preview ships its own grey, padded wrapper; the reader owns the page colour. */
+.docs-paper .docx-wrapper,
+.docs-paper .docs-page-wrapper {
+  background: none;
+  padding: 0;
+}
+
+.docs-paper section.docs-page {
+  box-shadow: var(--lb-shadow);
+  margin-bottom: 18px;
+  border-radius: 2px;
+  outline: 1px solid var(--lb-border);
+}
+
+.docs-paper section.docs-page:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- find strip ---------- */
+
+.docs-findbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--lb-border);
+  background: var(--lb-surface);
+}
+
+.docs-findbar input {
+  min-height: var(--lb-control);
+  width: 240px;
+  max-width: 50vw;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  border-radius: 8px;
+  border: 1px solid var(--lb-border);
+  background: var(--lb-surface-2);
+  color: var(--lb-text);
+}
+
+.docs-findcount {
+  font-size: 12px;
+  color: var(--lb-text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 52px;
+}
+
+mark.docs-hit {
+  background: color-mix(in srgb, var(--lb-accent) 28%, transparent);
+  color: inherit;
+  border-radius: 2px;
+}
+
+mark.docs-hit-active {
+  background: var(--lb-accent);
+  color: var(--lb-accent-contrast);
+}
